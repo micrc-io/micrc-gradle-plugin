@@ -1,0 +1,118 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: ${name}
+    files:
+      - ${build_relative_path}resources/main/micrc.properties
+
+secretGenerator:
+  - name: ${name}-database
+    literals:
+      - database.host=database-mysql
+      - database.port=3306
+      - database.user=${name}
+      - database.pass=${name}
+  - name: ${name}-cache
+    literals:
+      - cache.host=cache-redis-master
+      - cache.port=6379
+      - cache.pass=${name}
+  - name: ${name}-broker
+    literals:
+      - broker.host=broker-rabbitmq
+      - broker.port=5672
+      - broker.user=${name}
+      - broker.pass=${name}
+
+helmCharts:
+  - name: mysql
+    repo: https://charts.bitnami.com/bitnami
+    includeCRDs: false
+    releaseName: database
+    version: 9.4.1
+    valuesInline:
+      image:
+        tag: 8.0.30
+      architecture: standalone
+      auth:
+        rootPassword: root
+        createDatabase: true
+        database: ${name}
+        username: ${name}
+        password: ${name}
+      primary:
+        persistence:
+          enabled: false
+  - name: redis
+    repo: https://charts.bitnami.com/bitnami
+    includeCRDs: false
+    releaseName: cache
+    version: 17.3.5
+    valuesInline:
+      image:
+        tag: 6.2
+      architecture: standalone
+      auth:
+        enabled: true
+        sentinel: false
+        password: ${name}
+      master:
+        persistence:
+          enabled: false
+  - name: rabbitmq
+    repo: https://charts.bitnami.com/bitnami
+    includeCRDs: false
+    releaseName: broker
+    version: 11.0.0
+    valuesInline:
+      image:
+        tag: 3.9
+      clustering:
+        enabled: false
+      auth:
+        username: ${name}
+        password: ${name}
+      persistence:
+        enabled: false
+
+resources:
+  - ../base
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/args
+        value: ["local"]
+    target:
+      kind: Deployment
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/initContainers/0
+        value:
+          name: database-init
+          image: bitnami/mysql:8.0.30
+          command: ['sh', '-c', 'until mysql -u${name} -p${name} -hdatabase-mysql -P3306 -e "select version();"; do echo waiting for database; sleep 5; done;']
+    target:
+      kind: Deployment
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/initContainers/1
+        value:
+          name: cache-init
+          image: bitnami/redis:6.2
+          command: ['sh', '-c', 'until redis-cli -a ${name} -h cache-redis-master -p 6379 --no-auth-warning ping; do echo waiting for cache; sleep 2; done;']
+    target:
+      kind: Deployment
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/initContainers/2
+        value:
+          name: broker-init
+          image: curlimages/curl
+          command: ['sh', '-c', 'until curl broker-rabbitmq:15672; do echo waiting for broker; sleep 2; done;']
+    target:
+      kind: Deployment

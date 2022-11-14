@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+}
+
+sourceCompatibility = '11'
+targetCompatibility = '11'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    gradlePluginPortal()
+}
+
+dependencies {
+    implementation group: 'org.springframework.boot', name: 'spring-boot-gradle-plugin', version: '2.7.3'
+    implementation group: 'io.spring.dependency-management', name: 'io.spring.dependency-management.gradle.plugin', version: '1.0.13.RELEASE', ext: 'pom'
+    implementation group: 'com.google.cloud.tools', name: 'jib-gradle-plugin', version: '3.3.0'
+
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
+    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
+
+    implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+}
