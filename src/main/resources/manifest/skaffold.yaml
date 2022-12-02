@@ -1,0 +1,45 @@
+apiVersion: skaffold/v2beta29
+kind: Config
+metadata:
+  name: ${name}
+build:
+  artifacts:
+    - image: ${name}
+      sync:
+        auto: true
+      jib:
+        type: gradle
+        fromImage: 'amazoncorretto:11'
+        args: [ ]
+profiles:
+  - name: local
+    deploy:
+      kustomize:
+        paths: ["build/manifest/k8s/kustomize/local"]
+        buildArgs: ["--enable-helm", "--load-restrictor=LoadRestrictionsNone"]
+    build:
+      tagPolicy:
+        gitCommit: { }
+
+portForward:
+  - resourceType: service
+    resourceName: ${name}
+    port: 80
+    localPort: 8080
+  - resourceType: service
+    resourceName: database-mysql
+    port: 3306
+    localPort: 3306
+  - resourceType: service
+    resourceName: cache-redis-master
+    port: 6379
+    localPort: 6379
+  - resourceType: service
+    resourceName: broker-rabbitmq
+    port: 5672
+    localPort: 5672
+  - resourceType: service
+    resourceName: broker-rabbitmq
+    port: 15672
+    localPort: 15672
+

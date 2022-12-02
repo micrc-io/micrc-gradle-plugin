@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "${name}.fullname" . }}
+  labels:
+    {{- include "${name}.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "${name}.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "${name}.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "${name}.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: database-migration
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          args: ["dbinit"]
+          volumeMounts:
+            - name: database-secret
+              mountPath: "/etc/secrets/database"
+              readOnly: true
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          args: ["production"]
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: actuator
+              containerPort: 18080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: actuator
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: actuator
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 30"]
+          volumeMounts:
+            - name: database-secret
+              mountPath: "/etc/secrets/database"
+              readOnly: true
+            - name: cache-secret
+              mountPath: "/etc/secrets/cache"
+              readOnly: true
+            - name: broker-secret
+              mountPath: "/etc/secrets/broker"
+              readOnly: true
+            - name: memory-db-secret
+              mountPath: "/etc/secrets/memory-db"
+              readOnly: true
+      volumes:
+        - name: database-secret
+          secret:
+            secretName: {{ include "${name}.database.secretName" . }}
+        - name: cache-secret
+          secret:
+            secretName: {{ include "${name}.cache.secretName" . }}
+        - name: broker-secret
+          secret:
+            secretName: {{ include "${name}.broker.secretName" . }}
+        - name: memory-db-secret
+          secret:
+            secretName: {{ include "${name}.memory-db.secretName" . }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
