@@ -126,6 +126,11 @@ public class ProjectConfigure {
         log.info("configure maven repositories: mavenLocal, mavenCentral. ");
         RepositoryHandler repositories = project.getRepositories();
         repositories.mavenLocal();
+        repositories.maven(
+                repository -> {
+                    repository.setUrl(project.findProperty("ouxxa_nexus"));
+                }
+        );
         repositories.mavenCentral();
         project.afterEvaluate(proj -> {
             log.info("configure dependencies: "
@@ -134,8 +139,8 @@ public class ProjectConfigure {
             DependencyHandler dependencies = proj.getDependencies();
             dependencies.add("implementation", "org.springframework.boot:spring-boot-starter");
             // runtime core
-            dependencies.add("implementation", "io.micrc.core:micrc-core:0.0.1");
-            dependencies.add("implementation", "io.micrc.core:micrc-annotations:0.0.1");
+            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.1");
+            dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.1");
             // persistence annotations
             dependencies.add("implementation", "jakarta.persistence:jakarta.persistence-api:2.2.3");
             // rabbitmq - 切换完成消息队列后去除

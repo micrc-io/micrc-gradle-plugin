@@ -20,6 +20,14 @@ profiles:
     build:
       tagPolicy:
         gitCommit: { }
+  - name: integration
+    deploy:
+      kustomize:
+        paths: ["build/manifest/k8s/kustomize/integration"]
+        buildArgs: ["--enable-helm", "--load-restrictor=LoadRestrictionsNone"]
+    build:
+      tagPolicy:
+        gitCommit: { }
 
 portForward:
   - resourceType: service

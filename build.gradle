@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'io.micrc.core'
-version = '0.0.1'
+version = 'v0.0.1'
 sourceCompatibility = '11'
 targetCompatibility = '11'
 
@@ -18,8 +18,12 @@ configurations {
 
 repositories {
     mavenLocal()
-    mavenCentral()
+    maven {
+        url "${ouxxa_nexus}"
+    }
     gradlePluginPortal()
+    mavenCentral()
+
 }
 
 gradlePlugin {
@@ -60,6 +64,18 @@ publishing {
         mavenJava(MavenPublication) {
             from components.java
             artifact sourcesJar
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'colibriNexus'
+            url = uri("${colibri_nexus}")
+            println 'publish to ' + url
+            credentials {
+                username = "${colibri_nexus_user}"
+                password = "${colibri_nexus_pass}"
+            }
         }
     }
 }
