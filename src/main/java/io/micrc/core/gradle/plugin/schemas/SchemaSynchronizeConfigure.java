@@ -81,6 +81,23 @@ public class SchemaSynchronizeConfigure {
             log.warning("unable to obtain repo url.");
             return null;
         }
+        if(!url.contains("@") && !url.startsWith("ssh")){
+            // 当地址不是使用token获取的且不是走SSH协议的时候,需要从环境变量里获取其相应的环境变量并修改url
+            String passwordIdentify = System.getenv("git_password_identify");
+            String organizationName = System.getenv("git_organization_identify");
+            System.out.println("the password identify is " + passwordIdentify + " | the organization name is " + organizationName);
+            String[] urls = url.split("://");
+            StringBuffer organizationUrl = new StringBuffer();
+            organizationUrl.append(urls[0]);
+            organizationUrl.append("://");
+            organizationUrl.append(organizationName);
+            organizationUrl.append(":");
+            organizationUrl.append(passwordIdentify);
+            organizationUrl.append("@");
+            organizationUrl.append(urls[1]);
+            url = organizationUrl.toString();
+            System.out.println("the organization url is ->" + url);
+        }
         return url;
     }
 
