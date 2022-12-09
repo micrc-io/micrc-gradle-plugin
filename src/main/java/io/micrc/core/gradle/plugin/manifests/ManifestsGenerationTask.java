@@ -72,6 +72,9 @@ public class ManifestsGenerationTask extends DefaultTask {
         // kustomize local kustomization.yaml
         List<String> kustomizeLocalPaths = List.of("manifest", "k8s", "kustomize", "local", "kustomization.yaml");
         generateManifest(properties, buildDirPath, kustomizeLocalPaths, kustomizeLocalPaths);
+        // kustomize dev kustomization.yaml
+        List<String> kustomizeDevPaths = List.of("manifest", "k8s", "kustomize", "dev", "kustomization.yaml");
+        generateManifest(properties, buildDirPath, kustomizeDevPaths, kustomizeDevPaths);
     }
 
     private void generateManifest(

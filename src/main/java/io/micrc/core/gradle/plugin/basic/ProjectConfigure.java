@@ -128,9 +128,7 @@ public class ProjectConfigure {
         repositories.mavenLocal();
         repositories.maven(
                 repository -> {
-                    // repository.setUrl(project.findProperty("ouxxa_nexus"));
                     repository.setUrl("https://repo.it.ouxxa.com/repository/maven-hub/");
-
                 }
         );
         repositories.mavenCentral();
