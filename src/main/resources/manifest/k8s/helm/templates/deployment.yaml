@@ -35,6 +35,15 @@ spec:
             - name: database-secret
               mountPath: "/etc/secrets/database"
               readOnly: true
+            - name: cache-secret
+              mountPath: "/etc/secrets/cache"
+              readOnly: true
+            - name: broker-secret
+              mountPath: "/etc/secrets/broker"
+              readOnly: true
+            - name: memory-db-secret
+              mountPath: "/etc/secrets/memory-db"
+              readOnly: true
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -76,11 +85,11 @@ spec:
             - name: memory-db-secret
               mountPath: "/etc/secrets/memory-db"
               readOnly: true
-        - name: logicExecutor
+        - name: logic-executor
           securityContext:
           {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}-logic-executor:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          args: [ "production" ]
+          args: [ ]
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http

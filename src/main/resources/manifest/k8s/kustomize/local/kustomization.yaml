@@ -28,8 +28,8 @@ secretGenerator:
       - memory-db.pass=${name}
   - name: ${name}-broker
     literals:
-      - broker.host=broker-rabbitmq
-      - broker.port=5672
+      - broker.host=broker
+      - broker.port=9092
       - broker.user=${name}
       - broker.pass=${name}
 
@@ -68,21 +68,22 @@ helmCharts:
       master:
         persistence:
           enabled: false
-  - name: rabbitmq
+  - name: kafka
     repo: https://charts.bitnami.com/bitnami
     includeCRDs: false
     releaseName: broker
-    version: 11.0.0
+    version: 20.0.1
     valuesInline:
       image:
-        tag: 3.9
-      clustering:
-        enabled: false
+        tag: 3.3.1-debian-11-r22
       auth:
-        username: ${name}
-        password: ${name}
+        clientProtocol: plaintext
       persistence:
         enabled: false
+      zookeeper:
+        enabled: true
+        replicaCount: 1
+
 
 resources:
   - ../base
@@ -112,12 +113,13 @@ patches:
           command: ['sh', '-c', 'until redis-cli -a ${name} -h cache-redis-master -p 6379 --no-auth-warning ping; do echo waiting for cache; sleep 2; done;']
     target:
       kind: Deployment
-  - patch: |-
-      - op: add
-        path: /spec/template/spec/initContainers/2
-        value:
-          name: broker-init
-          image: curlimages/curl
-          command: ['sh', '-c', 'until curl broker-rabbitmq:15672; do echo waiting for broker; sleep 2; done;']
-    target:
-      kind: Deployment
+# 临时注释 需寻找kafka就绪探针的实现方式,该种方式不可行
+#  - patch: |-
+#      - op: add
+#        path: /spec/template/spec/initContainers/2
+#        value:
+#          name: broker-init
+#          image: curlimages/curl
+#          command: ['sh', '-c', 'until curl broker-kafka:9092; do echo waiting for broker; sleep 2; done;']
+#    target:
+#      kind: Deployment

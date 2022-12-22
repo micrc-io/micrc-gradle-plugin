@@ -11,6 +11,13 @@ build:
         type: gradle
         fromImage: 'amazoncorretto:11'
         args: [ ]
+    - image: ${name}-logic-executor
+      sync:
+        auto: true
+      custom:
+        buildCommand: |
+          cd ../logic-executor && ./mvnw clean package && docker build --pull --rm -f "src/main/docker/Dockerfile.jvm" -t $IMAGE .
+
 profiles:
   - name: local
     deploy:
@@ -23,6 +30,9 @@ profiles:
       tagPolicy:
         gitCommit: { }
   - name: dev
+    patches:
+      - op: delete
+        path: /build/artifacts/1
     deploy:
       kustomize:
         paths: [ "build/manifest/k8s/kustomize/dev" ]

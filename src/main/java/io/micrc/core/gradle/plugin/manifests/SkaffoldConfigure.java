@@ -71,6 +71,7 @@ public class SkaffoldConfigure {
         properties.put("name", project.getName());
         properties.put("domainName", domainName);
         properties.put("registry", registry);
+        properties.put("IMAGE", "$IMAGE");
         // skaffold.yaml
         List<String> skaffoldPaths = List.of("manifest", "skaffold.yaml");
         List<String> skaffoldTargetPaths = List.of("skaffold.yaml");
