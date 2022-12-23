@@ -143,8 +143,6 @@ public class ProjectConfigure {
             dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.1");
             // persistence annotations
             dependencies.add("implementation", "jakarta.persistence:jakarta.persistence-api:2.2.3");
-            // rabbitmq - 切换完成消息队列后去除
-            dependencies.add("implementation", "org.springframework.boot:spring-boot-starter-amqp");
             // spring data jpa
             dependencies.add("implementation", "org.springframework.boot:spring-boot-starter-data-jpa");
             // kafka

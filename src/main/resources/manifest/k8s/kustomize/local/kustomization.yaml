@@ -28,7 +28,7 @@ secretGenerator:
       - memory-db.pass=${name}
   - name: ${name}-broker
     literals:
-      - broker.host=broker
+      - broker.host=broker-kafka
       - broker.port=9092
       - broker.user=${name}
       - broker.pass=${name}
@@ -113,7 +113,7 @@ patches:
           command: ['sh', '-c', 'until redis-cli -a ${name} -h cache-redis-master -p 6379 --no-auth-warning ping; do echo waiting for cache; sleep 2; done;']
     target:
       kind: Deployment
-# 临时注释 需寻找kafka就绪探针的实现方式,该种方式不可行
+# 临时注释 需寻找kafka initcontainer实现方式,该种方式不可行
 #  - patch: |-
 #      - op: add
 #        path: /spec/template/spec/initContainers/2
