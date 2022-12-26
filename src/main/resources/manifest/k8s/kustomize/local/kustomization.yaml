@@ -97,24 +97,6 @@ patches:
         value: ["local"]
     target:
       kind: Deployment
-  - patch: |-
-      - op: add
-        path: /spec/template/spec/initContainers/0
-        value:
-          name: database-init
-          image: bitnami/mysql:8.0.30
-          command: ['sh', '-c', 'until mysql -u${underline_name} -p${underline_name} -hdatabase-mysql -P3306 -e "select version();"; do echo waiting for database; sleep 5; done;']
-    target:
-      kind: Deployment
-  - patch: |-
-      - op: add
-        path: /spec/template/spec/initContainers/1
-        value:
-          name: cache-init
-          image: bitnami/redis:6.2
-          command: ['sh', '-c', 'until redis-cli -a cache -h cache-redis-master -p 6379 --no-auth-warning ping; do echo waiting for cache; sleep 2; done;']
-    target:
-      kind: Deployment
 # 临时注释 需寻找kafka就绪探针的实现方式,该种方式不可行
 #  - patch: |-
 #      - op: add
