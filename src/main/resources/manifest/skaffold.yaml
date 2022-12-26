@@ -28,7 +28,8 @@ profiles:
       local:
         push: false
       tagPolicy:
-        gitCommit: { }
+        gitCommit:
+          variant: AbbrevCommitSha
   - name: dev
     patches:
       - op: delete

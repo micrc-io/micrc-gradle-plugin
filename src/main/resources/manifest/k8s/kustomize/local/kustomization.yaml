@@ -14,24 +14,25 @@ secretGenerator:
     literals:
       - database.host=database-mysql
       - database.port=3306
-      - database.user=${name}
-      - database.pass=${name}
-  - name: ${name}-cache
+      - database.dbname=${underline_name}
+      - database.username=${underline_name}
+      - database.password=${underline_name}
+  - name: redis-admin
     literals:
       - cache.host=cache-redis-master
       - cache.port=6379
-      - cache.pass=${name}
-  - name: ${name}-memory-db
+      - cache.password=cache
+  - name: memory-db-admin
     literals:
       - memory-db.host=cache-redis-master
       - memory-db.port=6379
-      - memory-db.pass=${name}
-  - name: ${name}-broker
+      - memory-db.password=cache
+  - name: kafka-admin
     literals:
       - broker.host=broker-kafka
       - broker.port=9092
-      - broker.user=${name}
-      - broker.pass=${name}
+      - broker.user=kafka
+      - broker.pass=kafka
 
 helmCharts:
   - name: mysql
@@ -46,9 +47,9 @@ helmCharts:
       auth:
         rootPassword: root
         createDatabase: true
-        database: ${name}
-        username: ${name}
-        password: ${name}
+        database: ${underline_name}
+        username: ${underline_name}
+        password: ${underline_name}
       primary:
         persistence:
           enabled: false
@@ -64,7 +65,7 @@ helmCharts:
       auth:
         enabled: true
         sentinel: false
-        password: ${name}
+        password: cache
       master:
         persistence:
           enabled: false
@@ -101,7 +102,7 @@ patches:
         value:
           name: database-init
           image: bitnami/mysql:8.0.30
-          command: ['sh', '-c', 'until mysql -u${name} -p${name} -hdatabase-mysql -P3306 -e "select version();"; do echo waiting for database; sleep 5; done;']
+          command: ['sh', '-c', 'until mysql -u${underline_name} -p${underline_name} -hdatabase-mysql -P3306 -e "select version();"; do echo waiting for database; sleep 5; done;']
     target:
       kind: Deployment
   - patch: |-
@@ -110,10 +111,10 @@ patches:
         value:
           name: cache-init
           image: bitnami/redis:6.2
-          command: ['sh', '-c', 'until redis-cli -a ${name} -h cache-redis-master -p 6379 --no-auth-warning ping; do echo waiting for cache; sleep 2; done;']
+          command: ['sh', '-c', 'until redis-cli -a cache -h cache-redis-master -p 6379 --no-auth-warning ping; do echo waiting for cache; sleep 2; done;']
     target:
       kind: Deployment
-# 临时注释 需寻找kafka initcontainer实现方式,该种方式不可行
+# 临时注释 需寻找kafka就绪探针的实现方式,该种方式不可行
 #  - patch: |-
 #      - op: add
 #        path: /spec/template/spec/initContainers/2

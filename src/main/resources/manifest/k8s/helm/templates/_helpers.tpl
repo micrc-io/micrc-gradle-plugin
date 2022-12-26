@@ -16,21 +16,21 @@ Database secret name
 Cache secret name
 */}}
 {{- define "${name}.cache.secretName" -}}
-{{- printf "%s-%s" (include "${name}.name" .) "cache" }}
+{{- "redis-admin" }}
 {{- end }}
 
 {{/*
 Broker secret name
 */}}
 {{- define "${name}.broker.secretName" -}}
-{{- printf "%s-%s" (include "${name}.name" .) "broker" }}
+{{- "kafka-admin" }}
 {{- end }}
 
 {{/*
 Memory-db secret name
 */}}
 {{- define "${name}.memory-db.secretName" -}}
-{{- printf "%s-%s" (include "${name}.name" .) "memory-db" }}
+{{- "memory-db-admin" }}
 {{- end }}
 
 {{/*

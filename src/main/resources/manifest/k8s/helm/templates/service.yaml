@@ -31,4 +31,3 @@ spec:
       targetPort: http
   selector:
     {{- include "${name}.selectorLabels" . | nindent 4 }}
-
