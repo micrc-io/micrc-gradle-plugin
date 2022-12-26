@@ -31,9 +31,6 @@ profiles:
         gitCommit:
           variant: AbbrevCommitSha
   - name: dev
-    patches:
-      - op: delete
-        path: /build/artifacts/1
     deploy:
       kustomize:
         paths: [ "build/manifest/k8s/kustomize/dev" ]
