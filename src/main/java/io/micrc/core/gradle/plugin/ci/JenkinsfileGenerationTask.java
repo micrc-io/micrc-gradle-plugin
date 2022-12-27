@@ -23,6 +23,8 @@ public class JenkinsfileGenerationTask extends DefaultTask {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    private static final String DOMAIN_NAME_POINTER = "/domainName";
+
     private static final String DOMAIN_REGISTRY_POINTER = "/registry";
 
     private static final String REGISTRY_CREDENTIAL = "/registryCredential";
@@ -64,6 +66,7 @@ public class JenkinsfileGenerationTask extends DefaultTask {
         if (domainInfo == null || domainInfo.isBlank()) {
             throw new IllegalStateException("could not obtain domain info from domain-info.json. fix domain schema and retry configure project.");
         }
+        String domainName = null;
         String registry = null;
         String registryCredential = null;
         String gitopsRepository = null;
@@ -72,6 +75,7 @@ public class JenkinsfileGenerationTask extends DefaultTask {
         String httpsProxy = null;
         String noProxy = null;
         try {
+            domainName = MAPPER.readTree(domainInfo).at(DOMAIN_NAME_POINTER).asText();
             registry = MAPPER.readTree(domainInfo).at(DOMAIN_REGISTRY_POINTER).asText();
             registryCredential = MAPPER.readTree(domainInfo).at(REGISTRY_CREDENTIAL).asText();
             gitopsRepository = MAPPER.readTree(domainInfo).at(GITOPS_REPOSITORY).asText();
@@ -84,6 +88,7 @@ public class JenkinsfileGenerationTask extends DefaultTask {
         }
 
         // schema params
+        properties.put("domainName", domainName);
         properties.put("projectName", project.getName());
         properties.put("git_credential", gitCredential);
         properties.put("docker_registry", registry);

@@ -57,22 +57,22 @@ pipeline {
                             sh "chmod 777 -R /home/jenkins/agent/workspace"
                             // 删除原始文件
                             dir("../_gitops/profiles/integration"){
-                                sh "echo 'delete original file '"
-                                sh "rm -rf order-${projectName}.yaml "
+                                sh "echo '删除原始文件 '"
+                                sh "rm -rf ${domainName}-${projectName}.yaml "
                             }
-                            // 将render结果写入main分支中的profiles/integration/order-${projectName}.yaml文件
-                            sh " echo '写入order-${projectName}.yaml' "
-                            sh "mv ${projectName}/${projectName}-deploy.yaml ../_gitops/profiles/integration/order-${projectName}.yaml"
-                            // commit gitops
+                            // 将render结果写入main分支中的profiles/integration/${domainName}-${projectName}.yaml文件
+                            sh " echo '写入${domainName}-${projectName}.yaml' "
+                            sh "mv ${projectName}/${projectName}-deploy.yaml ../_gitops/profiles/integration/${domainName}-${projectName}.yaml"
+                            // 提交gitops库
                             dir("../_gitops"){
-                                sh "echo 'commit gitops'"
+                                sh "echo '提交gitops库'"
                                 sh "git config --global user.email 'developer@ouxxa.com'"
                                 sh "git config --global user.name 'jenkins'"
                                 sh "git add ./ && git commit -m $SERVICE_TAG"
                                 sh "export https_proxy=${https_proxy} && git push"
                             }
                         }
-                        // clean
+                        // 清理镜像,生产环境打开
                         sh "docker image prune -f -a"
                     }
                 }
