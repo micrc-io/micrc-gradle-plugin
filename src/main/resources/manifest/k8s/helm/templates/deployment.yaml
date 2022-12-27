@@ -31,53 +31,45 @@ spec:
         - name: database-init
           image: bitnami/mysql:8.0.30
           command: ['sh', '-c', 'until mysql -u$MYSQL_USERNAME -p$MYSQL_PASSWORD -h$MYSQL_HOST -P$MYSQL_PORT -e "select version();"; do echo waiting for database; sleep 5; done;']
-          volumeMounts:
-            - name: database-secret
-              mountPath: "/etc/secrets/database"
-              readOnly: true
           env:
             - name: MYSQL_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: database-secret
+                  name: {{ include "${name}.database.secretName" . }}
                   key: database.username
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: database-secret
+                  name: {{ include "${name}.database.secretName" . }}
                   key: database.password
             - name: MYSQL_HOST
               valueFrom:
                 secretKeyRef:
-                  name: database-secret
+                  name: {{ include "${name}.database.secretName" . }}
                   key: database.host
             - name: MYSQL_PORT
               valueFrom:
                 secretKeyRef:
-                  name: database-secret
+                  name: {{ include "${name}.database.secretName" . }}
                   key: database.port
         - name: cache-init
           image: bitnami/redis:6.2
           command: ['sh', '-c', 'until redis-cli -a $CACHE_AUTH -h $CACHE_HOST -p $CACHE_PORT --no-auth-warning ping; do echo waiting for cache; sleep 2; done;']
-          volumeMounts:
-            - name: cache-secret
-              mountPath: "/etc/secrets/cache"
-              readOnly: true
           env:
             - name: CACHE_AUTH
               valueFrom:
                 secretKeyRef:
-                  name: cache-secret
+                  name: {{ include "${name}.cache.secretName" . }}
                   key: cache.password
             - name: CACHE_HOST
               valueFrom:
                 secretKeyRef:
-                  name: cache-secret
+                  name: {{ include "${name}.cache.secretName" . }}
                   key: cache.host
             - name: CACHE_PORT
               valueFrom:
                 secretKeyRef:
-                  name: cache-secret
+                  name: {{ include "${name}.cache.secretName" . }}
                   key: cache.port
         - name: database-migration
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

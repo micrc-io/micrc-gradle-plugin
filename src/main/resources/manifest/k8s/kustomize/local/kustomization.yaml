@@ -83,7 +83,6 @@ helmCharts:
         enabled: false
       zookeeper:
         enabled: true
-        persistence: false
         replicaCount: 1
 
 

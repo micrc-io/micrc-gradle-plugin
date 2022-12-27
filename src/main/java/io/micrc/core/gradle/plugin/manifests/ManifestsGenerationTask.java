@@ -28,6 +28,15 @@ public class ManifestsGenerationTask extends DefaultTask {
         String projectName = project.getName();
         String buildDirPath = project.getBuildDir().getAbsolutePath();
         Map<String, String> properties = new HashMap<>();
+        // system env placeholder
+        properties.put("MYSQL_USERNAME", "$MYSQL_USERNAME");
+        properties.put("MYSQL_PASSWORD", "$MYSQL_PASSWORD");
+        properties.put("MYSQL_HOST", "$MYSQL_HOST");
+        properties.put("MYSQL_PORT", "$MYSQL_PORT");
+        properties.put("CACHE_AUTH", "$CACHE_AUTH");
+        properties.put("CACHE_HOST", "$CACHE_HOST");
+        properties.put("CACHE_PORT", "$CACHE_PORT");
+
         properties.put("name", project.getName());
         properties.put("underline_name", CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_UNDERSCORE, project.getName()));
         properties.put("build_relative_path", "../../../../");
