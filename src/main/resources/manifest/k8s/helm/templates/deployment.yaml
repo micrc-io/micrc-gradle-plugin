@@ -71,6 +71,30 @@ spec:
                 secretKeyRef:
                   name: {{ include "${name}.cache.secretName" . }}
                   key: cache.port
+        - name: broker-init
+          image: edenhill/kafkacat:1.6.0
+          command: [ 'sh', '-c', 'until kafkacat -L -b $BROKER_HOST:$BROKER_PORT ; do echo waiting for broker; sleep 2; done;' ]
+          env:
+            - name: BROKER_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "${name}.broker.secretName" . }}
+                  key: broker.host
+            - name: BROKER_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "${name}.broker.secretName" . }}
+                  key: broker.port
+            - name: BROKER_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "${name}.broker.secretName" . }}
+                  key: broker.user
+            - name: BROKER_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "${name}.broker.secretName" . }}
+                  key: broker.pass
         - name: database-migration
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           args: ["dbinit"]

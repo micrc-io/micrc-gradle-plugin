@@ -96,13 +96,3 @@ patches:
         value: ["local"]
     target:
       kind: Deployment
-# 临时注释 需寻找kafka就绪探针的实现方式,该种方式不可行
-#  - patch: |-
-#      - op: add
-#        path: /spec/template/spec/initContainers/2
-#        value:
-#          name: broker-init
-#          image: curlimages/curl
-#          command: ['sh', '-c', 'until curl broker-kafka:9092; do echo waiting for broker; sleep 2; done;']
-#    target:
-#      kind: Deployment

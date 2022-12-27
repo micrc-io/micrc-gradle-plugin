@@ -24,9 +24,16 @@ public class ManifestsGenerationTask extends DefaultTask {
         properties.put("MYSQL_PASSWORD", "$MYSQL_PASSWORD");
         properties.put("MYSQL_HOST", "$MYSQL_HOST");
         properties.put("MYSQL_PORT", "$MYSQL_PORT");
+
         properties.put("CACHE_AUTH", "$CACHE_AUTH");
         properties.put("CACHE_HOST", "$CACHE_HOST");
         properties.put("CACHE_PORT", "$CACHE_PORT");
+
+        properties.put("BROKER_HOST", "$BROKER_HOST");
+        properties.put("BROKER_PORT", "$BROKER_PORT");
+        properties.put("BROKER_USER", "$BROKER_USER");
+        properties.put("BROKER_PASS", "$BROKER_PASS");
+
 
         properties.put("name", project.getName());
         properties.put("underline_name", CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_UNDERSCORE, project.getName()));
