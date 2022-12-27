@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrc.core.gradle.plugin.adapter.IntegrationAdapterGenerationTask;
 import io.micrc.core.gradle.plugin.applications.ApplicationServiceGenerationTask;
 import io.micrc.core.gradle.plugin.basic.ProjectConfigure;
+import io.micrc.core.gradle.plugin.ci.JenkinsfileGenerationTask;
 import io.micrc.core.gradle.plugin.manifests.ManifestsGenerationTask;
 import io.micrc.core.gradle.plugin.manifests.SkaffoldConfigure;
 import io.micrc.core.gradle.plugin.models.ModelGenerationTask;
@@ -36,6 +37,7 @@ public class MicrcCompilationPlugin implements Plugin<Project> {
         project.getTasks().create("manifestsGeneration", ManifestsGenerationTask.class);
         project.getTasks().create("applicationServiceGeneration", ApplicationServiceGenerationTask.class);
         project.getTasks().create("modelGeneration", ModelGenerationTask.class);
+        project.getTasks().create("jenkinsfileGeneration", JenkinsfileGenerationTask.class, schema.getSchemaLocation());
 
         // 切入执行task以及调整task执行顺序
         project.afterEvaluate(pj -> {
@@ -48,13 +50,17 @@ public class MicrcCompilationPlugin implements Plugin<Project> {
         System.out.println("execute micrc tasks before compileJavaTask");
         // 设置执行编译
         compileJavaTask.dependsOn("manifestsGeneration");
+        compileJavaTask.dependsOn("jenkinsfileGeneration");
+
         Task integrationAdapterGenerationTask = pj.getTasks().findByName("integrationAdapterGeneration");
         Task manifestsGenerationTask = pj.getTasks().findByName("manifestsGeneration");
         Task applicationServiceGenerationTask = pj.getTasks().findByName("applicationServiceGeneration");
         Task modelGenerationTask = pj.getTasks().findByName("modelGeneration");
+        Task jenkinsfileGenerationTask = pj.getTasks().findByName("jenkinsfileGeneration");
         integrationAdapterGenerationTask.setGroup(MICRC_GROUP_NAME);
         manifestsGenerationTask.setGroup(MICRC_GROUP_NAME);
         applicationServiceGenerationTask.setGroup(MICRC_GROUP_NAME);
         modelGenerationTask.setGroup(MICRC_GROUP_NAME);
+        jenkinsfileGenerationTask.setGroup(MICRC_GROUP_NAME);
     }
 }

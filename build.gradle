@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'io.micrc.core'
-version = 'v0.0.1-20221227-4'
+version = 'v0.0.1-20221227-5'
 sourceCompatibility = '11'
 targetCompatibility = '11'
 
@@ -72,7 +72,6 @@ publishing {
         maven {
             name = 'colibriNexus'
             url = uri("${colibri_nexus}")
-            println 'publish to ' + url
             credentials {
                 username = "${colibri_nexus_user}"
                 password = "${colibri_nexus_pass}"

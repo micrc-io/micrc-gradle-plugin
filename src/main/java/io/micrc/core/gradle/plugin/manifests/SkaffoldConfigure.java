@@ -1,20 +1,16 @@
 package io.micrc.core.gradle.plugin.manifests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import groovy.text.SimpleTemplateEngine;
 import io.micrc.core.gradle.plugin.MicrcCompilationExtension;
+import io.micrc.core.gradle.plugin.TemplateUtils;
 import lombok.extern.java.Log;
-import org.apache.commons.io.IOUtils;
 import org.gradle.api.Project;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,39 +71,7 @@ public class SkaffoldConfigure {
         // skaffold.yaml
         List<String> skaffoldPaths = List.of("manifest", "skaffold.yaml");
         List<String> skaffoldTargetPaths = List.of("skaffold.yaml");
-        generateManifest(properties, project.getProjectDir().getAbsolutePath(), skaffoldPaths, skaffoldTargetPaths);
-    }
-    private String appVersionToChartVersion(String appVersion) {
-        String[] versions = appVersion.split("\\.");
-        return String.format("%d.%d.%d", Integer.valueOf(versions[0]), Integer.valueOf(versions[1] + versions[2]), 0);
+        TemplateUtils.generate(properties, project.getProjectDir().getAbsolutePath(), skaffoldPaths, skaffoldTargetPaths);
     }
 
-    private void generateManifest(
-            Map<String, String> context,
-            String buildPath,
-            List<String> sourcePaths,
-            List<String> targetPaths) {
-        String sourcePath = String.join(File.separator, sourcePaths);
-        InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(sourcePath);
-        if (inputStream == null) {
-            throw new IllegalStateException("template file: " + sourcePath + " is not exists. ");
-        }
-        try {
-            String flatten = new SimpleTemplateEngine()
-                    .createTemplate(IOUtils.toString(inputStream, StandardCharsets.UTF_8))
-                    .make(context)
-                    .toString();
-            String targetDirPath = String.join(File.separator, targetPaths.subList(0, targetPaths.size() - 1));
-            Path dirPath = Paths.get(buildPath, targetDirPath);
-            Files.createDirectories(dirPath);
-            String targetPath = String.join(File.separator, targetPaths);
-            Files.writeString(
-                    Paths.get(buildPath, String.join(File.pathSeparator, targetPath)),
-                    flatten,
-                    StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException | ClassNotFoundException e) {
-            throw new IllegalStateException(e);
-        }
-    }
 }

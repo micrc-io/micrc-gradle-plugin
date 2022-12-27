@@ -88,7 +88,6 @@ public class ProjectConfigure {
                 }
             }
             if (domainInfo == null || domainInfo.isBlank()) {
-                // 规范化每个子域repo中schema的domain-info.json信息后，放开这个注释
                 throw new IllegalStateException("could not obtain domain info from domain-info.json. fix domain schema and retry configure project.");
             }
             String domainGroup = null;
@@ -139,7 +138,7 @@ public class ProjectConfigure {
             DependencyHandler dependencies = proj.getDependencies();
             dependencies.add("implementation", "org.springframework.boot:spring-boot-starter");
             // runtime core
-            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.1");
+            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.1-20221227-1");
             dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.1");
             // persistence annotations
             dependencies.add("implementation", "jakarta.persistence:jakarta.persistence-api:2.2.3");
