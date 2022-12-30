@@ -96,6 +96,10 @@ public class ProjectConfigure {
                 domainGroup = MAPPER.readTree(domainInfo).at(DOMAIN_GROUP_POINTER).asText();
                 ArrayNode contextNode = (ArrayNode) MAPPER.readTree(domainInfo).at(DOMAIN_CONTEXTS_POINTER);
                 List<Map<String, Object>> contexts = MAPPER.readerForListOf(HashMap.class).readValue(contextNode);
+                System.out.println("this domain have contexts is --->");
+                contexts.stream().forEach( context -> {
+                    System.out.println(context.get("contextName"));
+                });
                 Optional<Map<String, Object>> contextOptional = contexts.stream().filter(context -> context.get("contextName").equals(project.getName())).findFirst();
                 if (contextOptional.isEmpty()) {
                     throw new RuntimeException("could not resolve server version, please check contexts");
@@ -138,8 +142,8 @@ public class ProjectConfigure {
             DependencyHandler dependencies = proj.getDependencies();
             dependencies.add("implementation", "org.springframework.boot:spring-boot-starter");
             // runtime core
-            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.1-20221227-1");
-            dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.1");
+            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.1-20221228-8");
+            dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.1-20221228-1");
             // persistence annotations
             dependencies.add("implementation", "jakarta.persistence:jakarta.persistence-api:2.2.3");
             // spring data jpa
