@@ -3,8 +3,6 @@ kind: Config
 metadata:
   name: ${name}
 build:
-  tagPolicy:
-    gitCommit: {}
   artifacts:
     - image: ${name}
       sync:
@@ -12,33 +10,13 @@ build:
       jib:
         type: gradle
         fromImage: 'amazoncorretto:11'
-        args: []
-deploy:
-  kustomize:
-    paths: ["build/manifest/k8s/kustomize/base"]
-    buildArgs: ["--enable-helm", "--load-restrictor=LoadRestrictionsNone"]
-
-portForward:
-  - resourceType: service
-    resourceName: ${name}
-    port: 80
-    localPort: 8080
-  - resourceType: service
-    resourceName: database-mysql
-    port: 3306
-    localPort: 3306
-  - resourceType: service
-    resourceName: cache-redis-master
-    port: 6379
-    localPort: 6379
-  - resourceType: service
-    resourceName: broker-rabbitmq
-    port: 5672
-    localPort: 5672
-  - resourceType: service
-    resourceName: broker-rabbitmq
-    port: 15672
-    localPort: 15672
+        args: [ ]
+    - image: ${name}-logic-executor
+      sync:
+        auto: true
+      custom:
+        buildCommand: |
+          cd ../logic-executor && ./mvnw clean package && docker build --pull --rm -f "src/main/docker/Dockerfile.jvm" -t $IMAGE .
 
 profiles:
   - name: local
@@ -46,3 +24,21 @@ profiles:
       kustomize:
         paths: ["build/manifest/k8s/kustomize/local"]
         buildArgs: ["--enable-helm", "--load-restrictor=LoadRestrictionsNone"]
+    build:
+      local:
+        push: false
+      tagPolicy:
+        gitCommit:
+          variant: AbbrevCommitSha
+  - name: dev
+    deploy:
+      kustomize:
+        paths: [ "build/manifest/k8s/kustomize/dev" ]
+        buildArgs: [ "--enable-helm", "--load-restrictor=LoadRestrictionsNone" ]
+    build:
+      local:
+        push: false
+      tagPolicy:
+        envTemplate:
+          template: "{{.TAG}}"
+

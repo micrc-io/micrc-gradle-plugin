@@ -22,11 +22,15 @@ public class SchemaSynchronizeConfigure {
 
     private final String schemaBranch = "schema";
     private final String schemaDir = "schema";
+    private final String domainSchemaDir = "domain";
     private final String schemaPathToBuild = "micrc-schema";
     private boolean configurable = false;
     private String schemaPath;
 
-    private SchemaSynchronizeConfigure() {}
+    private String schemaLocation;
+
+    private SchemaSynchronizeConfigure() {
+    }
 
     public static SchemaSynchronizeConfigure instance() {
         if (INSTANCE == null) {
@@ -37,6 +41,14 @@ public class SchemaSynchronizeConfigure {
 
     public void configure(Project project) {
         schemaPath = project.getBuildDir().getAbsolutePath() + File.separator + schemaPathToBuild;
+        File schemaPackage = new File(schemaPath);
+        if (schemaPackage.exists()) {
+            schemaPackage.delete();
+        }
+        if (!schemaPackage.exists()) {
+            schemaPackage.mkdirs();
+        }
+        schemaLocation = schemaPath + File.separator + schemaDir;
         String url = obtainRepoUrl(project);
         if (url == null) {
             return;
@@ -69,6 +81,22 @@ public class SchemaSynchronizeConfigure {
             log.warning("unable to obtain repo url.");
             return null;
         }
+        if(!url.contains("@") && !url.startsWith("ssh")){
+            // 当地址不是使用token获取的且不是走SSH协议的时候,需要从环境变量里获取其相应的环境变量并修改url
+            String credential = System.getenv("git_credential");
+            String username = System.getenv("git_username");
+            String[] urls = url.split("://");
+            StringBuffer repoUrl = new StringBuffer();
+            repoUrl.append(urls[0]);
+            repoUrl.append("://");
+            repoUrl.append(username);
+            repoUrl.append(":");
+            repoUrl.append(credential);
+            repoUrl.append("@");
+            repoUrl.append(urls[1]);
+            url = repoUrl.toString();
+            System.out.println("the organization url is ->" + url);
+        }
         return url;
     }
 
@@ -91,12 +119,12 @@ public class SchemaSynchronizeConfigure {
             return false;
         }
         final List<String> gitClone = List.of("git", "clone",
-                                              "--depth", "1",
-                                              "--filter=blob:none",
-                                              "--sparse",
-                                              "-b", schemaBranch,
-                                              url,
-                                              schemaPath);
+                "--depth", "1",
+                "--filter=blob:none",
+                "--sparse",
+                "-b", schemaBranch,
+                url,
+                schemaPath);
         ExecResult cloneResult = project.exec(execSpec -> {
             execSpec.commandLine(gitClone);
         });
@@ -106,15 +134,14 @@ public class SchemaSynchronizeConfigure {
         }
         return true;
     }
-
     private boolean checkoutSchema(Project project) {
-        final List<String> gitCheckout = List.of("git", "sparse-checkout", "set", schemaDir + File.separator + project.getName());
+        final List<String> gitCheckout = List.of("git", "sparse-checkout", "set", schemaDir + File.separator + project.getName(), schemaDir + File.separator + domainSchemaDir);
         ExecResult checkoutResult = project.exec(execSpec -> {
             execSpec.setWorkingDir(schemaPath);
             execSpec.commandLine(gitCheckout);
         });
         if (checkoutResult.getExitValue() != 0) {
-            log.warning("unable to checkout content.");
+            log.warning("unable to checkout domain schema.");
             return false;
         }
         return true;

@@ -1,0 +1,84 @@
+pipeline {
+    options {
+        overrideIndexTriggers(false)
+    }
+
+    agent {
+        node {
+            label 'micrc'
+        }
+    }
+
+    parameters {
+        string(name: 'tag')
+    }
+
+    environment {
+        git_credential = '${git_credential}'
+        docker_registry = '${docker_registry}'
+        registry_credential = '${registry_credential}'
+        gitops_repository = "${gitops_repository}"
+    }
+
+    stages {
+        /* 日构建版本 */
+        stage('${projectName}-daily') {
+            steps {
+                container('micrc') {
+                    script {
+                        println 'build' + params.tag
+                        dir("${projectName}") {
+                            withCredentials([usernamePassword(credentialsId: "$GIT_CREDENTIAL", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                                sh "export https_proxy=${https_proxy} && export no_proxy=${no_proxy} && export git_username=$GIT_USERNAME && export git_credential=$GIT_PASSWORD  && gradle build "
+                            }
+                            withCredentials([usernamePassword(credentialsId: "$GIT_CREDENTIAL", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME'), usernamePassword(credentialsId: "$REGISTRY_CREDENTIAL", passwordVariable: 'REGISTRY_PASSWORD', usernameVariable: 'REGISTRY_USERNAME')]) {
+                                sh "docker login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD $DOCKER_REGISTRY"
+                                sh "export https_proxy=${https_proxy} && export no_proxy=${no_proxy} && export git_username=$GIT_USERNAME && export git_credential=$GIT_PASSWORD && export SKAFFOLD_DEFAULT_REPO=$DOCKER_REGISTRY && export TAG=$SERVICE_TAG && skaffold build -p dev"
+                            }
+                        }
+                        // push镜像至registry
+                        sh "docker push $DOCKER_REGISTRY/${projectName}:$SERVICE_TAG"
+                        sh "docker push $DOCKER_REGISTRY/${projectName}-logic-executor:$SERVICE_TAG"
+                        // render skaffold 得到文件内容
+                        dir("${projectName}") {
+                            withCredentials([usernamePassword(credentialsId: "$GIT_CREDENTIAL", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME'), usernamePassword(credentialsId: "$REGISTRY_CREDENTIAL", passwordVariable: 'REGISTRY_PASSWORD', usernameVariable: 'REGISTRY_USERNAME')]) {
+                                sh "export no_proxy=${no_proxy} && export git_username=$GIT_USERNAME && export git_credential=$GIT_PASSWORD && export SKAFFOLD_DEFAULT_REPO=$DOCKER_REGISTRY && export TAG=$SERVICE_TAG && skaffold render -p dev -n colibri-erp-integration --digest-source=tag > ${projectName}-deploy.yaml"
+                            }
+                        }
+
+                        def gitopsLock = "gitops"
+                        lock(gitopsLock) {
+                        // 拉取gitops库
+                            dir("../"){
+                                withCredentials([usernamePassword(credentialsId: "$GIT_CREDENTIAL", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                                    sh "export https_proxy=${https_proxy} && git clone https://$GIT_USERNAME:$GIT_PASSWORD@$GITOPS_REPO "
+                                }
+                            }
+                            sh "chmod 777 -R /home/jenkins/agent/workspace"
+                            // 删除原始文件
+                            dir("../_gitops/profiles/integration"){
+                                sh "echo '删除原始文件 '"
+                                sh "rm -rf ${domainName}-${projectName}.yaml "
+                            }
+                            // 将render结果写入main分支中的profiles/integration/${domainName}-${projectName}.yaml文件
+                            sh " echo '写入${domainName}-${projectName}.yaml' "
+                            sh "mv ${projectName}/${projectName}-deploy.yaml ../_gitops/profiles/integration/${domainName}-${projectName}.yaml"
+                            // 提交gitops库
+                            dir("../_gitops"){
+                                sh "echo '提交gitops库'"
+                                sh "git config --global user.email 'developer@ouxxa.com'"
+                                sh "git config --global user.name 'jenkins'"
+                                sh "git add ./ && git commit -m $SERVICE_TAG"
+                                sh "export https_proxy=${https_proxy} && git push"
+                            }
+                        }
+                        // 清理镜像,生产环境打开
+                        sh "docker image prune -f -a"
+                    }
+                }
+            }
+        }
+    }
+
+
+}

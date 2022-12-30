@@ -1,6 +1,9 @@
 package io.micrc.core.gradle.plugin.basic;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.micrc.core.gradle.plugin.MicrcCompilationExtension;
+import lombok.SneakyThrows;
 import lombok.extern.java.Log;
 import org.gradle.api.Action;
 import org.gradle.api.JavaVersion;
@@ -14,16 +17,27 @@ import org.gradle.api.tasks.testing.Test;
 import org.gradle.language.jvm.tasks.ProcessResources;
 
 import javax.annotation.Nonnull;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Log
 public class ProjectConfigure {
     private static ProjectConfigure INSTANCE;
     private final boolean configurable;
     private final String schemaPath;
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private static final String DOMAIN_GROUP_POINTER = "/group";
+
+    private static final String DOMAIN_CONTEXTS_POINTER = "/contexts";
 
     private ProjectConfigure(boolean configurable, String schemaPath) {
         this.configurable = configurable;
@@ -46,6 +60,7 @@ public class ProjectConfigure {
         configureJunitTest(project);
     }
 
+    @SneakyThrows
     private void configureIdentity(Project project) {
         project.afterEvaluate(proj -> {
             log.info("configure micrc project info. ");
@@ -54,15 +69,16 @@ public class ProjectConfigure {
             if (!configurable) {
                 if (proj.getGroup().toString().isBlank()) {
                     throw new IllegalStateException("not schema file for obtain 'group' info"
-                                                    + ". must set 'group' property in build.gradle manual.");
+                            + ". must set 'group' property in build.gradle manual.");
                 }
                 if (proj.getVersion().toString().isBlank()) {
                     throw new IllegalStateException("not schema file for obtain 'version' info"
-                                                    + ". must set 'version' property in build.gradle manual.");
+                            + ". must set 'version' property in build.gradle manual.");
                 }
             }
+
             // schema/domain-info.json - 子域相关信息，其中包含group和version，子域下所有上下文名称都在group表达的命名空间下
-            Path schemaFile = Paths.get(schemaPath, MicrcCompilationExtension.DOMAIN_INFO_NAME);
+            Path schemaFile = Paths.get(schemaPath, MicrcCompilationExtension.DOMAIN_DIR_NAME + File.separator + MicrcCompilationExtension.DOMAIN_INFO_NAME);
             String domainInfo = null;
             if (schemaFile.toFile().exists()) {
                 try {
@@ -72,12 +88,28 @@ public class ProjectConfigure {
                 }
             }
             if (domainInfo == null || domainInfo.isBlank()) {
-                // 规范化每个子域repo中schema的domain-info.json信息后，放开这个注释
-                //throw new IllegalStateException("could not obtain domain info from domain-info.json. fix domain schema and retry configure project.");
+                throw new IllegalStateException("could not obtain domain info from domain-info.json. fix domain schema and retry configure project.");
             }
-            // TODO 文件里是个json，最小化设计这个json，解析并设置group和version信息
-            //project.setGroup("com.xian.colibri.example");
-            //project.setVersion("0.0.1");
+            String domainGroup = null;
+            String serviceVersion = null;
+            try {
+                domainGroup = MAPPER.readTree(domainInfo).at(DOMAIN_GROUP_POINTER).asText();
+                ArrayNode contextNode = (ArrayNode) MAPPER.readTree(domainInfo).at(DOMAIN_CONTEXTS_POINTER);
+                List<Map<String, Object>> contexts = MAPPER.readerForListOf(HashMap.class).readValue(contextNode);
+                System.out.println("this domain have contexts is --->");
+                contexts.stream().forEach( context -> {
+                    System.out.println(context.get("contextName"));
+                });
+                Optional<Map<String, Object>> contextOptional = contexts.stream().filter(context -> context.get("contextName").equals(project.getName())).findFirst();
+                if (contextOptional.isEmpty()) {
+                    throw new RuntimeException("could not resolve server version, please check contexts");
+                }
+                serviceVersion = contextOptional.get().get("version").toString();
+            } catch (IOException e) {
+                throw new RuntimeException("could not resolve domain info, please check domain-info.json");
+            }
+            project.setGroup(domainGroup);
+            project.setVersion(serviceVersion);
         });
     }
 
@@ -97,18 +129,37 @@ public class ProjectConfigure {
         log.info("configure maven repositories: mavenLocal, mavenCentral. ");
         RepositoryHandler repositories = project.getRepositories();
         repositories.mavenLocal();
+        repositories.maven(
+                repository -> {
+                    repository.setUrl("https://repo.it.ouxxa.com/repository/maven-hub/");
+                }
+        );
         repositories.mavenCentral();
         project.afterEvaluate(proj -> {
             log.info("configure dependencies: "
-                     + "spring-boot-starter, jakarta.persistence-api, "
-                     + "lombok, spring-boot-starter-test, micrc-core. ");
+                    + "spring-boot-starter, jakarta.persistence-api, "
+                    + "lombok, spring-boot-starter-test, micrc-core. ");
             DependencyHandler dependencies = proj.getDependencies();
             dependencies.add("implementation", "org.springframework.boot:spring-boot-starter");
+            // runtime core
+            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.1-20221228-8");
+            dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.1-20221228-1");
+            // persistence annotations
             dependencies.add("implementation", "jakarta.persistence:jakarta.persistence-api:2.2.3");
+            // spring data jpa
+            dependencies.add("implementation", "org.springframework.boot:spring-boot-starter-data-jpa");
+            // kafka
+            dependencies.add("implementation", "org.springframework.kafka:spring-kafka");
+            // hibernate-types
+            dependencies.add("implementation", "com.vladmihalcea:hibernate-types-55:2.18.0");
+            // lombok
             dependencies.add("compileOnly", "org.projectlombok:lombok");
             dependencies.add("annotationProcessor", "org.projectlombok:lombok");
+            // springboot test
             dependencies.add("testImplementation", "org.springframework.boot:spring-boot-starter-test");
-            dependencies.add("implementation", "io.micrc.core:micrc-core:0.0.1");
+            // temp
+            dependencies.add("implementation", "org.apache.camel.springboot:camel-spring-boot-starter:3.18.1");
+            dependencies.add("implementation", "org.springframework.boot:spring-boot-starter-web");
         });
     }
 
@@ -121,7 +172,7 @@ public class ProjectConfigure {
                 @Override
                 public void execute(@Nonnull Task task) {
                     ((ProcessResources) task).filesMatching("micrc.properties", fileCopyDetails ->
-                    fileCopyDetails.expand(project.getProperties()));
+                            fileCopyDetails.expand(project.getProperties()));
                 }
             });
         }

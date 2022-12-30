@@ -14,19 +14,25 @@ secretGenerator:
     literals:
       - database.host=database-mysql
       - database.port=3306
-      - database.user=${name}
-      - database.pass=${name}
-  - name: ${name}-cache
+      - database.dbname=${underline_name}
+      - database.username=${underline_name}
+      - database.password=${underline_name}
+  - name: redis-admin
     literals:
       - cache.host=cache-redis-master
       - cache.port=6379
-      - cache.pass=${name}
-  - name: ${name}-broker
+      - cache.password=cache
+  - name: memory-db-admin
     literals:
-      - broker.host=broker-rabbitmq
-      - broker.port=5672
-      - broker.user=${name}
-      - broker.pass=${name}
+      - memory-db.host=cache-redis-master
+      - memory-db.port=6379
+      - memory-db.password=cache
+  - name: kafka-admin
+    literals:
+      - broker.host=broker-kafka
+      - broker.port=9092
+      - broker.user=kafka
+      - broker.pass=kafka
 
 helmCharts:
   - name: mysql
@@ -41,9 +47,9 @@ helmCharts:
       auth:
         rootPassword: root
         createDatabase: true
-        database: ${name}
-        username: ${name}
-        password: ${name}
+        database: ${underline_name}
+        username: ${underline_name}
+        password: ${underline_name}
       primary:
         persistence:
           enabled: false
@@ -59,25 +65,26 @@ helmCharts:
       auth:
         enabled: true
         sentinel: false
-        password: ${name}
+        password: cache
       master:
         persistence:
           enabled: false
-  - name: rabbitmq
+  - name: kafka
     repo: https://charts.bitnami.com/bitnami
     includeCRDs: false
     releaseName: broker
-    version: 11.0.0
+    version: 20.0.1
     valuesInline:
       image:
-        tag: 3.9
-      clustering:
-        enabled: false
+        tag: 3.3.1-debian-11-r22
       auth:
-        username: ${name}
-        password: ${name}
+        clientProtocol: plaintext
       persistence:
         enabled: false
+      zookeeper:
+        enabled: true
+        replicaCount: 1
+
 
 resources:
   - ../base
@@ -87,32 +94,5 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/args
         value: ["local"]
-    target:
-      kind: Deployment
-  - patch: |-
-      - op: add
-        path: /spec/template/spec/initContainers/0
-        value:
-          name: database-init
-          image: bitnami/mysql:8.0.30
-          command: ['sh', '-c', 'until mysql -u${name} -p${name} -hdatabase-mysql -P3306 -e "select version();"; do echo waiting for database; sleep 5; done;']
-    target:
-      kind: Deployment
-  - patch: |-
-      - op: add
-        path: /spec/template/spec/initContainers/1
-        value:
-          name: cache-init
-          image: bitnami/redis:6.2
-          command: ['sh', '-c', 'until redis-cli -a ${name} -h cache-redis-master -p 6379 --no-auth-warning ping; do echo waiting for cache; sleep 2; done;']
-    target:
-      kind: Deployment
-  - patch: |-
-      - op: add
-        path: /spec/template/spec/initContainers/2
-        value:
-          name: broker-init
-          image: curlimages/curl
-          command: ['sh', '-c', 'until curl broker-rabbitmq:15672; do echo waiting for broker; sleep 2; done;']
     target:
       kind: Deployment

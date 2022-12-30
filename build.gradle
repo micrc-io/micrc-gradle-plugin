@@ -1,23 +1,81 @@
 plugins {
     id 'java'
+    id 'idea'
+    id 'maven-publish'
+    id 'java-gradle-plugin'
 }
 
+group = 'io.micrc.core'
+version = 'v0.0.1-20221228-9'
 sourceCompatibility = '11'
 targetCompatibility = '11'
 
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
 repositories {
     mavenLocal()
-    mavenCentral()
+    maven {
+        url "${ouxxa_nexus}"
+    }
     gradlePluginPortal()
+    mavenCentral()
 }
+
+gradlePlugin {
+    plugins {
+        micrcCompilation {
+            id = 'io.micrc.core.micrc.gradle.plugin'
+            implementationClass = 'io.micrc.core.gradle.plugin.MicrcCompilationPlugin'
+        }
+    }
+}
+
 
 dependencies {
     implementation group: 'org.springframework.boot', name: 'spring-boot-gradle-plugin', version: '2.7.3'
     implementation group: 'io.spring.dependency-management', name: 'io.spring.dependency-management.gradle.plugin', version: '1.0.13.RELEASE', ext: 'pom'
     implementation group: 'com.google.cloud.tools', name: 'jib-gradle-plugin', version: '3.3.0'
 
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.13.3'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.3'
+
+    implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
+
+    implementation group: 'dev.gradleplugins', name: 'gradle-api', version: '7.5.1'
+    implementation group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.10'
+
     compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
     annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
 
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier = 'sources'
+}
+
+// 执行publishToMavenLocal后，其他工程可正常引入
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'colibriNexus'
+            url = uri("${colibri_nexus}")
+            credentials {
+                username = "${colibri_nexus_user}"
+                password = "${colibri_nexus_pass}"
+            }
+        }
+    }
 }
