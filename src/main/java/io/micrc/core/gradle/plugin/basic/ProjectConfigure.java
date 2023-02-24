@@ -143,7 +143,7 @@ public class ProjectConfigure {
             dependencies.add("implementation", "org.springframework.boot:spring-boot-starter");
             // runtime core
             dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.1-20230224-1");
-            dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.1-20230221-2");
+            dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.1-20230221-3");
             // persistence annotations
             dependencies.add("implementation", "jakarta.persistence:jakarta.persistence-api:2.2.3");
             // spring data jpa
