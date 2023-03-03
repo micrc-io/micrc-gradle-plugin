@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'io.micrc.core'
-version = 'v0.0.1-20230227-7'
+version = 'v0.0.1-20230303-8'
 sourceCompatibility = '11'
 targetCompatibility = '11'
 
@@ -44,6 +44,9 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.3'
 
     implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
+
+    // openapi merge tools
+    implementation "com.rameshkp:openapi-merger-gradle-plugin:1.0.5"
 
     implementation group: 'dev.gradleplugins', name: 'gradle-api', version: '7.5.1'
     implementation group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.10'
