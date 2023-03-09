@@ -53,6 +53,8 @@ public class JenkinsfileGenerationTask extends DefaultTask {
         properties.put("REGISTRY_PASSWORD", "${REGISTRY_PASSWORD}");
         properties.put("GITOPS_REPO", "${env.gitops_repository}");
         properties.put("SERVICE_TAG", "${params.tag}");
+        properties.put("COMMIT_NUMBER", "${params.commit_number}");
+        properties.put("DOMAIN_REPO", "${params.domain_repository}");
 
         Path schemaFile = Paths.get(schemaPath, MicrcCompilationExtension.DOMAIN_DIR_NAME + File.separator + MicrcCompilationExtension.DOMAIN_INFO_NAME);
         String domainInfo = null;
