@@ -5,6 +5,21 @@ plugins {
     id 'java-gradle-plugin'
 }
 
+ext {
+    set("spring-boot-gradle-plugin.version", '2.7.3')
+    set("dependency-management.version", '1.0.13.RELEASE')
+    set("jib-gradle-plugin.version", '3.3.0')
+    set("jackson.core.version", '2.13.3')
+    set("guava.version", '31.1-jre')
+    set("commons-io.version", '2.11.0')
+    set("openapi-merger.version", '1.0.5')
+    set('json-patch.version', '1.13')
+    set('gradle-api.version', '7.5.1')
+    set("groovy-all.version", '3.0.10')
+    set("lombok.version", '1.18.24')
+}
+
+
 group = 'io.micrc.core'
 version = 'v0.0.1-20230309-3'
 sourceCompatibility = '11'
@@ -36,28 +51,30 @@ gradlePlugin {
 
 
 dependencies {
-    implementation group: 'org.springframework.boot', name: 'spring-boot-gradle-plugin', version: '2.7.3'
-    implementation group: 'io.spring.dependency-management', name: 'io.spring.dependency-management.gradle.plugin', version: '1.0.13.RELEASE', ext: 'pom'
-    implementation group: 'com.google.cloud.tools', name: 'jib-gradle-plugin', version: '3.3.0'
+    implementation "org.springframework.boot:spring-boot-gradle-plugin:${property('spring-boot-gradle-plugin.version')}"
+    implementation "io.spring.dependency-management:io.spring.dependency-management.gradle.plugin:${property('dependency-management.version')}"
+    implementation "com.google.cloud.tools:jib-gradle-plugin:${property('jib-gradle-plugin.version')}"
 
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.13.3'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.3'
+    implementation "com.fasterxml.jackson.core:jackson-core:${property('jackson.core.version')}"
+    implementation "com.fasterxml.jackson.core:jackson-databind:${property('jackson.core.version')}"
 
-    implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
+    implementation "com.google.guava:guava:${property('guava.version')}"
+    implementation "commons-io:commons-io:${property('commons-io.version')}"
 
     // openapi merge tools
-    implementation "com.rameshkp:openapi-merger-gradle-plugin:1.0.5"
+    implementation "com.rameshkp:openapi-merger-gradle-plugin:${property('openapi-merger.version')}"
+    // json patch support for custom router with json-pointer and json-patch
+    implementation "com.github.java-json-tools:json-patch:${property('json-patch.version')}"
 
-    implementation group: 'dev.gradleplugins', name: 'gradle-api', version: '7.5.1'
-    implementation group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.10'
+    implementation "dev.gradleplugins:gradle-api:${property('gradle-api.version')}"
+    implementation "org.codehaus.groovy:groovy-all:${property('groovy-all.version')}"
 
-    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
-    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
+    compileOnly "org.projectlombok:lombok:${property('lombok.version')}"
+    annotationProcessor "org.projectlombok:lombok:${property('lombok.version')}"
 
-    implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
 }
 
-task sourcesJar(type: Jar) {
+tasks.register('sourcesJar', Jar) {
     from sourceSets.main.allJava
     classifier = 'sources'
 }
