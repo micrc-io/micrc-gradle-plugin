@@ -21,7 +21,7 @@ ext {
 
 
 group = 'io.micrc.core'
-version = 'v0.0.1-20230426-1'
+version = 'v0.0.1-20230426-4'
 sourceCompatibility = '11'
 targetCompatibility = '11'
 
