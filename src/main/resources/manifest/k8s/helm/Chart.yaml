@@ -1,6 +1,0 @@
-apiVersion: v2
-name: ${name}
-description: ${desc}
-type: application
-version: ${chart_version}
-appVersion: "${version}"

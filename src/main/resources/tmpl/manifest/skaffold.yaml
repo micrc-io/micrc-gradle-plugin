@@ -1,0 +1,54 @@
+apiVersion: skaffold/v4beta4
+kind: Config
+metadata:
+  name: ${contextName}-config
+build:
+  local:
+    push: false
+  tagPolicy:
+    envTemplate:
+      template: "{{.TAG}}"
+  artifacts:
+    - image: ${serviceName}
+      sync:
+        infer:
+          - 'build/classes/**/*'
+          - 'build/generated/**/*'
+          - 'build/resources/**/*'
+      jib:
+        type: gradle
+        fromImage: 'amazoncorretto:11'
+    - image: ${logicName}
+      sync:
+        infer:
+          - 'target/**/*'
+      context: ../${logicName}
+      docker:
+        dockerfile: src/main/docker/Dockerfile.jvm
+        pullParent: true
+        cliFlags:
+          - "--rm"
+
+profiles:
+  - name: local
+    build:
+      tagPolicy:
+        gitCommit:
+          variant: AbbrevCommitSha
+    manifests:
+      kustomize:
+        paths:
+          - build/micrc/manifests/k8s/kustomize/local
+        buildArgs:
+          - --enable-helm
+          - --load-restrictor=LoadRestrictionsNone
+    deploy:
+      kubectl: {}
+  - name: dev
+    manifests:
+      kustomize:
+        paths:
+          - build/micrc/manifests/k8s/kustomize/dev
+        buildArgs:
+          - --enable-helm
+          - --load-restrictor=LoadRestrictionsNone

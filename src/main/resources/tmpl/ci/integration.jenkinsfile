@@ -1,0 +1,87 @@
+pipeline {
+  options {
+    overrideIndexTriggers(false)
+  }
+  agent {
+    node {
+      label 'micrc'
+    }
+  }
+  parameters {
+    string(name: 'commit', defaultValue: '', description: 'git commit num')
+    choice(
+      name: 'profile',
+      choices: ['no-deploy', 'dev', 'ver', 'acc'],
+      description: 'deploy profile'
+    )
+  }
+  environment {
+    tag='${version}'
+    git_credential='github-repo-admin'
+    registry_credential='registry-admin'
+    docker_registry='${registry}'
+    gitops_repo='${gitopsRepo}'
+  }
+
+  stages {
+    stage('${contextName} - integration') {
+      when {
+          expression { params.commit != '' }
+      }
+      steps {
+        container('micrc') {
+          sh "git checkout \$COMMIT"
+          dir("${serviceName}") {
+            sh 'gradle -PBUILD_TYPE="integration" clean'
+          }
+          dir("${logicName}") {
+            sh 'mvn clean package -q'
+          }
+          dir("${serviceName}") {
+            sh "export TAG=\$TAG && skaffold build -p \$PROFILE --default-repo=\$DOCKER_REGISTRY"
+          }
+          withCredentials([usernamePassword(credentialsId: "\$REGISTRY_CREDENTIAL", passwordVariable: 'REGISTRY_PASSWORD', usernameVariable: 'REGISTRY_USERNAME')]) {
+            sh "docker login -u \$REGISTRY_USERNAME -p \$REGISTRY_PASSWORD \$DOCKER_REGISTRY"
+            sh "docker push \$DOCKER_REGISTRY/${serviceName}:\$TAG"
+            sh "docker push \$DOCKER_REGISTRY/${logicName}:\$TAG"
+          }
+        }
+      }
+    }
+    stage('${contextName} - deployment') {
+      when {
+        expression { params.profile != 'no-deploy' }
+      }
+      steps {
+        container('micrc') {
+          withCredentials([usernamePassword(credentialsId: "\$REGISTRY_CREDENTIAL", passwordVariable: 'REGISTRY_PASSWORD', usernameVariable: 'REGISTRY_USERNAME')]) {
+            sh "docker login -u \$REGISTRY_USERNAME -p \$REGISTRY_PASSWORD \$DOCKER_REGISTRY"
+          }
+          dir("${serviceName}") {
+            sh 'gradle -PBUILD_TYPE="integration" clean'
+            sh 'gradle -PBUILD_TYPE="integration" processResources'
+            sh "/bin/cp ~/.docker/config.json ./build/micrc/manifests/k8s/kustomize/docker-config.json"
+            sh "export TAG=\$TAG && skaffold render -p \$PROFILE --digest-source=tag --default-repo=\$DOCKER_REGISTRY > ${contextName}-manifest.yaml"
+          }
+          lock("micrc-gitops") {
+            dir("../"){
+              sh "chmod 777 -R ."
+              withCredentials([usernamePassword(credentialsId: "\$GIT_CREDENTIAL", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                sh "export https_proxy=${proxyServerUrl} && git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@\$GITOPS_REPO gitops"
+              }
+            }
+            sh "mkdir -p ../gitops/profiles/\$PROFILE/${domainName}"
+            sh "/bin/cp ${serviceName}/${contextName}-manifest.yaml ../gitops/profiles/\$PROFILE/${domainName}/${contextName}-manifest.yaml"
+            dir("../gitops"){
+              sh "git config --global user.email 'developer@ouxxa.com'"
+              sh "git config --global user.name 'jenkins'"
+              sh "git add ."
+              sh "git diff-index --quiet HEAD || git commit -m \"jenkins ci - version: \$TAG, profile: \$PROFILE\""
+              sh "export https_proxy=${proxyServerUrl} && git push"
+            }
+          }
+        }
+      }
+    }
+  }
+}

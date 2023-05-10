@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: ${name}-service
+    files:
+      - ../../../../../resources/main/micrc.properties
+
+helmGlobals:
+  chartHome: ../../helm
+
+helmCharts:
+  - name: ${name}
+    includeCRDs: false
+    releaseName: ${name}
+    version: ${version}
+    valuesInline:
+      ${database_secret_inlineValues}
+      ${cache_secret_inlineValues}
+      ${broker_secret_inlineValues}
+      ${memdb_secret_inlineValues}

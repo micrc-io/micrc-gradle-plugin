@@ -1,0 +1,120 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+secretGenerator:
+  - name: mysql-admin
+    literals:
+      - mysql-root-password=root
+      - mysql-password=${name}
+  - name: redis-admin
+    literals:
+      - redis-root-password=root
+  - name: kafka-admin
+    literals:
+      - kafka-root-password=root
+  - name: ${name}-mysql-database
+    literals:
+      - database.host=mysql
+      - database.port=3306
+      - database.dbname=${name}
+      - database.username=${name}
+      - database.password=${name}
+  - name: ${name}-redis-cache
+    literals:
+      - cache.host=redis-master
+      - cache.port=6379
+      - cache.password=root
+  - name: ${name}-kafka-broker
+    literals:
+      - broker.host=kafka
+      - broker.port=9092
+      - broker.password=root
+      - broker.topics=
+  - name: ${name}-redis-memdb
+    literals:
+      - memdb.host=redis-master
+      - memdb.port=6379
+      - memdb.password=root
+      # todo 修改runtime库后删除下面三个
+      - memory-db.host=redis-master
+      - memory-db.port=6379
+      - memory-db.password=root
+
+helmCharts:
+  - name: mysql
+    repo: https://charts.bitnami.com/bitnami
+    includeCRDs: false
+    releaseName: mysql
+    version: 9.4.1
+    valuesInline:
+      image:
+        tag: 8.0.30
+      architecture: standalone
+      auth:
+        createDatabase: true
+        database: ${name}
+        username: ${name}
+        existingSecret: mysql-admin
+      primary:
+        persistence:
+          enabled: false
+  - name: redis
+    repo: https://charts.bitnami.com/bitnami
+    includeCRDs: false
+    releaseName: redis
+    version: 17.3.5
+    valuesInline:
+      image:
+        tag: 6.2
+      architecture: standalone
+      auth:
+        enabled: true
+        sentinel: false
+        existingSecret: redis-admin
+        existingSecretPasswordKey: redis-root-password
+      master:
+        persistence:
+          enabled: false
+  - name: kafka
+    repo: https://charts.bitnami.com/bitnami
+    includeCRDs: false
+    releaseName: kafka
+    version: 20.0.1
+    valuesInline:
+      image:
+        tag: 3.3.1-debian-11-r22
+      deleteTopicEnable: true
+      autoCreateTopicsEnable: true
+      superUsers: User:root
+      auth:
+        clientProtocol: plaintext
+      persistence:
+        enabled: false
+      zookeeperConnectionTimeoutMs: 30000
+      zookeeper:
+        enabled: true
+        persistence:
+          enabled: false
+        replicaCount: 1
+
+resources:
+  - ../base
+
+patchesStrategicMerge:
+  - |-
+    apiVersion: autoscaling/v2beta1
+    kind: HorizontalPodAutoscaler
+    metadata:
+      name: ${name}
+    \$patch: delete
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/args
+        value: ["local"]
+    target:
+      kind: Deployment
