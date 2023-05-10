@@ -188,13 +188,6 @@ public class JsonUtil {
         }
     }
 
-    /**
-     * 补充目标JSON中不存在的节点
-     *
-     * @param json
-     * @param targetPath
-     * @return
-     */
     public static String supplementNotExistsNode(String json, String targetPath) {
         String[] split = targetPath.split("/");
         String p = "";

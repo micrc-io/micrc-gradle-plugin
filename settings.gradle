@@ -1,1 +1,10 @@
+pluginManagement {
+    repositories {
+        mavenLocal()
+        maven {
+            url "https://repo.it.ouxxa.com/repository/maven-hub/"
+        }
+    }
+}
+
 rootProject.name = 'micrc-gradle-plugin'

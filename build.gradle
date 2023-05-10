@@ -1,8 +1,7 @@
 plugins {
     id 'java'
     id 'idea'
-    id 'maven-publish'
-    id 'java-gradle-plugin'
+    id 'com.gradle.plugin-publish' version '1.2.0'
 }
 
 group = 'io.micrc.core'
@@ -28,10 +27,15 @@ repositories {
 }
 
 gradlePlugin {
+    website = 'https://github.com/micrc-io/micrc-gradle-plugin'
+    vcsUrl = 'https://github.com/micrc-io/micrc-gradle-plugin'
     plugins {
         micrcCompilation {
             id = 'io.micrc.core.gradle.plugin'
             implementationClass = 'io.micrc.core.gradle.plugin.MicrcCompilationPlugin'
+            displayName = 'micrc gradle plugin'
+            description = 'micrc gradle plugin'
+            tags.set(['micrc'])
         }
     }
 }
@@ -49,17 +53,4 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:${property('lombok.version')}"
 
     implementation "io.swagger.parser.v3:swagger-parser:${property('swagger-parser.version')}"
-}
-
-publishing {
-    repositories {
-        maven {
-            name = 'Github-Packages'
-            url = uri("https://maven.pkg.github.com/micrc-io/micrc-gradle-plugin")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
 }
