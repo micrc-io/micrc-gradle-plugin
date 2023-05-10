@@ -54,11 +54,11 @@ dependencies {
 publishing {
     repositories {
         maven {
-            name = 'colibriNexus'
-            url = uri("${colibri_nexus}")
+            name = 'Github-Packages'
+            url = uri("https://maven.pkg.github.com/micrc-io/micrc-gradle-plugin")
             credentials {
-                username = "${colibri_nexus_user}"
-                password = "${colibri_nexus_pass}"
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
             }
         }
     }
