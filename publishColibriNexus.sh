@@ -1,1 +1,0 @@
-gradle publishAllPublicationsToColibriNexusRepository -Dhttps.protocols=TLSv1.2
