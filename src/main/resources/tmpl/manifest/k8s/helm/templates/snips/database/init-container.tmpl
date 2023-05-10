@@ -1,0 +1,41 @@
+- name: database-init
+          image: bitnami/mysql:8.0.30
+          command:
+            - /bin/bash
+            - -c
+            - |
+              until mysql -u\$DB_USER -p\$DB_PASSWORD -h\$MYSQL_HOST -P\$MYSQL_PORT -e "select version();"; do echo waiting for database and user: \$DB_USER creation; sleep 5; done;
+              until mysql -u\$DB_USER -p\$DB_PASSWORD -h\$MYSQL_HOST -P\$MYSQL_PORT -e "use \$DB_NAME;"; do echo waiting for database: \$DB_NAME creation; sleep 5; done;
+          env:
+            - name: MYSQL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.dbSecret }}
+                  key: {{ .Values.database.dbHostKey }}
+            - name: MYSQL_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.dbSecret }}
+                  key: {{ .Values.database.dbPortKey }}
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.dbSecret }}
+                  key: {{ .Values.database.dbNameKey }}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.dbSecret }}
+                  key: {{ .Values.database.dbUserKey }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.dbSecret }}
+                  key: {{ .Values.database.dbPasswordKey }}
+        - name: database-migration
+          image: "{{ .Values.image.serviceRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          args: ["dbinit"]
+          volumeMounts:
+            - name: database-secret
+              mountPath: "/etc/secrets/database"
+              readOnly: true

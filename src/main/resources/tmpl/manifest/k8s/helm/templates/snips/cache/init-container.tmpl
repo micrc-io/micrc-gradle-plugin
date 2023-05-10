@@ -1,0 +1,23 @@
+- name: cache-init
+          image: bitnami/redis:6.2
+          command:
+            - sh
+            - -c
+            - |
+              until redis-cli -a \$CACHE_PASSWORD -h \$CACHE_HOST -p \$CACHE_PORT --no-auth-warning ping; do echo waiting for cache; sleep 2; done;
+          env:
+            - name: CACHE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.cache.cacheSecret }}
+                  key: {{ .Values.cache.cachePasswordKey }}
+            - name: CACHE_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.cache.cacheSecret }}
+                  key: {{ .Values.cache.cacheHostKey }}
+            - name: CACHE_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.cache.cacheSecret }}
+                  key: {{ .Values.cache.cachePortKey }}

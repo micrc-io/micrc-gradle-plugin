@@ -1,107 +1,223 @@
 package io.micrc.core.gradle.plugin.manifests;
 
-import com.google.common.base.CaseFormat;
-import io.micrc.core.gradle.plugin.TemplateUtils;
-import org.gradle.api.DefaultTask;
+import groovy.util.Eval;
+import io.micrc.core.gradle.plugin.lib.TemplateUtils;
+import io.micrc.core.gradle.plugin.project.SchemaSynchronizeConfigure;
+import lombok.extern.slf4j.Slf4j;
 import org.gradle.api.Project;
-import org.gradle.api.tasks.TaskAction;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-public class ManifestsGenerationTask extends DefaultTask {
-    @TaskAction
-    public void manifestsGeneration() {
-        Project project = this.getProject();
-        System.out.println("execute ManifestsGenerationTask");
-        //System.out.println("配置部署描述符");
-        String projectName = project.getName();
-        String buildDirPath = project.getBuildDir().getAbsolutePath();
-        Map<String, String> properties = new HashMap<>();
-        // system env placeholder
-        properties.put("MYSQL_USERNAME", "$MYSQL_USERNAME");
-        properties.put("MYSQL_PASSWORD", "$MYSQL_PASSWORD");
-        properties.put("MYSQL_HOST", "$MYSQL_HOST");
-        properties.put("MYSQL_PORT", "$MYSQL_PORT");
+@Slf4j
+public class ManifestsGenerationTask {
 
-        properties.put("CACHE_AUTH", "$CACHE_AUTH");
-        properties.put("CACHE_HOST", "$CACHE_HOST");
-        properties.put("CACHE_PORT", "$CACHE_PORT");
+    private static final String MICRC_MANIFESTS_BUILD_DIR = "micrc" + File.separator + "manifests";
 
-        properties.put("BROKER_HOST", "$BROKER_HOST");
-        properties.put("BROKER_PORT", "$BROKER_PORT");
-        properties.put("BROKER_USER", "$BROKER_USER");
-        properties.put("BROKER_PASS", "$BROKER_PASS");
+    private static ManifestsGenerationTask instance;
 
-
-        properties.put("name", project.getName());
-        properties.put("underline_name", CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_UNDERSCORE, project.getName()));
-        properties.put("build_relative_path", "../../../../");
-        properties.put("desc", String.format("%s chart for kubernetes", project.getName()));
-        properties.put("version", project.getVersion().toString());
-        properties.put("chart_version",
-                project.getVersion().toString().replace("v", "")
-        );
-        // helm Chart.yaml
-        List<String> chartPaths = List.of("manifest", "k8s", "helm", "Chart.yaml");
-        List<String> chartTargetPaths = List.of("manifest", "k8s", "helm", projectName, "Chart.yaml");
-        TemplateUtils.generate(properties, buildDirPath, chartPaths, chartTargetPaths);
-        // helm values.yaml
-        List<String> valuesPaths = List.of("manifest", "k8s", "helm", "values.yaml");
-        List<String> valuesTargetPaths = List.of("manifest", "k8s", "helm", projectName, "values.yaml");
-        TemplateUtils.generate(properties, buildDirPath, valuesPaths, valuesTargetPaths);
-        // helm .helmignore
-        List<String> helmignorePaths = List.of("manifest", "k8s", "helm", ".helmignore");
-        List<String> helmignoreTargetPaths = List.of("manifest", "k8s", "helm", projectName, ".helmignore");
-        TemplateUtils.generate(properties, buildDirPath, helmignorePaths, helmignoreTargetPaths);
-        // helm templates _helpers.tpl
-        List<String> helpersPaths = List.of("manifest", "k8s", "helm", "templates", "_helpers.tpl");
-        List<String> helpersTargetPaths = List.of("manifest", "k8s", "helm", projectName, "templates", "_helpers.tpl");
-        TemplateUtils.generate(properties, buildDirPath, helpersPaths, helpersTargetPaths);
-        // helm templates serviceaccount.yaml
-        List<String> serviceaccountPaths = List.of("manifest", "k8s", "helm", "templates", "serviceaccount.yaml");
-        List<String> serviceaccountTargetPaths = List.of("manifest", "k8s", "helm", projectName, "templates", "serviceaccount.yaml");
-        TemplateUtils.generate(properties, buildDirPath, serviceaccountPaths, serviceaccountTargetPaths);
-        // helm templates hpa.yaml
-        List<String> hpaPaths = List.of("manifest", "k8s", "helm", "templates", "hpa.yaml");
-        List<String> hpaTargetPaths = List.of("manifest", "k8s", "helm", projectName, "templates", "hpa.yaml");
-        TemplateUtils.generate(properties, buildDirPath, hpaPaths, hpaTargetPaths);
-        // helm templates service.yaml
-        List<String> servicePaths = List.of("manifest", "k8s", "helm", "templates", "service.yaml");
-        List<String> serviceTargetPaths = List.of("manifest", "k8s", "helm", projectName, "templates", "service.yaml");
-        TemplateUtils.generate(properties, buildDirPath, servicePaths, serviceTargetPaths);
-        // helm templates deployment.yaml
-        List<String> deploymentPaths = List.of("manifest", "k8s", "helm", "templates", "deployment.yaml");
-        List<String> deploymentTargetPaths = List.of("manifest", "k8s", "helm", projectName, "templates", "deployment.yaml");
-        TemplateUtils.generate(properties, buildDirPath, deploymentPaths, deploymentTargetPaths);
-        // kustomize base kustomization.yaml
-        List<String> kustomizeBasePaths = List.of("manifest", "k8s", "kustomize", "base", "kustomization.yaml");
-        TemplateUtils.generate(properties, buildDirPath, kustomizeBasePaths, kustomizeBasePaths);
-        // kustomize local kustomization.yaml
-        List<String> kustomizeLocalPaths = List.of("manifest", "k8s", "kustomize", "local", "kustomization.yaml");
-        TemplateUtils.generate(properties, buildDirPath, kustomizeLocalPaths, kustomizeLocalPaths);
-        // kustomize dev kustomization.yaml
-        List<String> kustomizeDevPaths = List.of("manifest", "k8s", "kustomize", "dev", "kustomization.yaml");
-        TemplateUtils.generate(properties, buildDirPath, kustomizeDevPaths, kustomizeDevPaths);
+    private ManifestsGenerationTask() {
     }
 
-    public static void main(String[] args) {
-        // 变量小写连接线转小写驼峰
-        System.out.println(CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_CAMEL, "user-name"));//userName
-        // 变量小写连接线转小写下划线
-        System.out.println(CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_UNDERSCORE, "user-name"));//user_name
-        // 变量小写下划线转小写驼峰
-        System.out.println(CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, "user_name"));//userName
-        // 变量下划线转大写驼峰
-        System.out.println(CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, "user_name"));//UserName
-        // 变量小写驼峰转大写驼峰
-        System.out.println(CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, "userName"));//UserName
-        // 变量小写驼峰转小写下划线
-        System.out.println(CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, "userName"));//user_name
-        // 变量小写驼峰转小写下划线
-        System.out.println(CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, "UserName"));//user_name
-        // 变量小写驼峰转小写连接线
-        System.out.println(CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, "userName"));//user-name
+    public static ManifestsGenerationTask newInstance() {
+        if (instance == null) {
+            instance = new ManifestsGenerationTask();
+        }
+        return instance;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void generateManifests(Project project) {
+        log.info("generate manifests");
+        String buildDirPath = project.getBuildDir().getAbsolutePath() + File.separator + MICRC_MANIFESTS_BUILD_DIR;
+        TemplateUtils.clearDir(Path.of(buildDirPath));
+        Optional<Object> contextMeta = Optional.ofNullable(SchemaSynchronizeConfigure.metaData.get("contextMeta"));
+        String name = project.getName().replace("-service", "");
+        Optional<String> namespace = Optional.ofNullable(
+            (String) Eval.x(contextMeta.orElseThrow(), "x.content.server.namespace")
+        );
+        Map<String, String> ctx = new HashMap<>(Map.of(
+            "name", name,
+            "version", project.getVersion().toString(),
+            "desc", String.format("%s chart for kubernetes", name),
+            "namespace", namespace.orElseThrow()
+        ));
+
+        // 处理中间件snip模版
+        Optional<Map<String, Object>> middlewares = Optional.ofNullable(
+            (Map<String, Object>) Eval.x(contextMeta.orElseThrow(), "x.content.server.middlewares")
+        );
+        middlewares.orElseThrow().keySet().forEach(middleware -> {
+            boolean enabled =
+                ((Map<String, Object>) middlewares.orElseThrow().get(middleware)).get("enabled").equals("true");
+            if (enabled) {
+                ctx.put(
+                    middleware + "_provider",
+                    (String) ((Map<String, Object>) middlewares.orElseThrow().get(middleware)).get("provider")
+                );
+            }
+            Optional<Map<String, Object>> profiles = Optional.ofNullable(
+                (Map<String, Object>) ((Map<String, Object>) middlewares.orElseThrow().get(middleware)).get("profiles")
+            );
+            middlewareBaseSnipsTemplateContext(ctx, buildDirPath, middleware, enabled);
+            middlewareProfilesSnipsTemplateContext(ctx, profiles.orElseThrow(), buildDirPath, middleware, enabled);
+        });
+
+        // 移除意外产生的out-PrintWriter
+        ctx.remove("out");
+        // 生成service helm deployment
+        generateHelm(ctx, buildDirPath, name);
+        // 生成kustomize base/local/dev
+        generateKustomize(ctx, buildDirPath);
+    }
+
+    private void generateHelm(Map<String, String> ctx, String buildDirPath, String contextName) {
+        // helm Chart.yaml
+        List<String> chartPaths =
+                List.of("tmpl", "manifest", "k8s", "helm", "Chart.yaml");
+        List<String> chartTargetPaths = List.of("k8s", "helm", contextName, "Chart.yaml");
+        TemplateUtils.generate(ctx, buildDirPath, chartPaths, chartTargetPaths);
+        // helm values.yaml
+        List<String> valuesPaths =
+                List.of("tmpl", "manifest", "k8s", "helm", "values.yaml");
+        List<String> valuesTargetPaths = List.of("k8s", "helm", contextName, "values.yaml");
+        TemplateUtils.generate(ctx, buildDirPath, valuesPaths, valuesTargetPaths);
+        // helm .helmignore
+        List<String> helmIgnorePaths =
+                List.of("tmpl", "manifest", "k8s", "helm", ".helmignore");
+        List<String> helmIgnoreTargetPaths = List.of("k8s", "helm", contextName, ".helmignore");
+        TemplateUtils.generate(ctx, buildDirPath, helmIgnorePaths, helmIgnoreTargetPaths);
+        // helm templates _helpers.tpl
+        List<String> helpersPaths =
+                List.of("tmpl", "manifest", "k8s", "helm", "templates", "_helpers.tpl");
+        List<String> helpersTargetPaths = List.of("k8s", "helm", contextName, "templates", "_helpers.tpl");
+        TemplateUtils.generate(ctx, buildDirPath, helpersPaths, helpersTargetPaths);
+        // helm templates serviceaccount.yaml
+        List<String> serviceaccountPaths =
+                List.of("tmpl", "manifest", "k8s", "helm", "templates", "serviceaccount.yaml");
+        List<String> serviceaccountTargetPaths =
+                List.of("k8s", "helm", contextName, "templates", "serviceaccount.yaml");
+        TemplateUtils.generate(ctx, buildDirPath, serviceaccountPaths, serviceaccountTargetPaths);
+        // helm templates hpa.yaml
+        List<String> hpaPaths =
+                List.of("tmpl", "manifest", "k8s", "helm", "templates", "hpa.yaml");
+        List<String> hpaTargetPaths = List.of("k8s", "helm", contextName, "templates", "hpa.yaml");
+        TemplateUtils.generate(ctx, buildDirPath, hpaPaths, hpaTargetPaths);
+        // helm templates service.yaml
+        List<String> servicePaths =
+                List.of("tmpl", "manifest", "k8s", "helm", "templates", "service.yaml");
+        List<String> serviceTargetPaths = List.of("k8s", "helm", contextName, "templates", "service.yaml");
+        TemplateUtils.generate(ctx, buildDirPath, servicePaths, serviceTargetPaths);
+        // helm templates deployment.yaml
+        List<String> deploymentPaths =
+                List.of("tmpl", "manifest", "k8s", "helm", "templates", "deployment.yaml");
+        List<String> deploymentTargetPaths = List.of("k8s", "helm", contextName, "templates", "deployment.yaml");
+        TemplateUtils.generate(ctx, buildDirPath, deploymentPaths, deploymentTargetPaths);
+    }
+
+    private void generateKustomize(Map<String, String> ctx, String buildDirPath) {
+        // kustomize base kustomization.yaml and sealed-secret.yaml
+        List<String> kustomizeBasePaths =
+                List.of("tmpl", "manifest", "k8s", "kustomize", "base", "kustomization.yaml");
+        List<String> kustomizeBaseTargetPaths = List.of("k8s", "kustomize", "base", "kustomization.yaml");
+        TemplateUtils.generate(ctx, buildDirPath, kustomizeBasePaths, kustomizeBaseTargetPaths);
+        // kustomize local kustomization.yaml
+        List<String> kustomizeLocalPaths =
+                List.of("tmpl", "manifest", "k8s", "kustomize", "local", "kustomization.yaml");
+        List<String> kustomizeLocalTargetPaths = List.of("k8s", "kustomize", "local", "kustomization.yaml");
+        TemplateUtils.generate(ctx, buildDirPath, kustomizeLocalPaths, kustomizeLocalTargetPaths);
+        // kustomize dev kustomization.yaml
+        List<String> kustomizeDevPaths =
+                List.of("tmpl", "manifest", "k8s", "kustomize", "dev", "kustomization.yaml");
+        List<String> kustomizeDevTargetPaths = List.of("k8s", "kustomize", "dev", "kustomization.yaml");
+        TemplateUtils.generate(ctx, buildDirPath, kustomizeDevPaths, kustomizeDevTargetPaths);
+        List<String> kustomizeDevSecretPaths =
+                List.of("tmpl", "manifest", "k8s", "kustomize", "dev", "sealed-secret.yaml");
+        List<String> kustomizeDevSecretTargetPaths = List.of("k8s", "kustomize", "dev", "sealed-secret.yaml");
+        TemplateUtils.generate(ctx, buildDirPath, kustomizeDevSecretPaths, kustomizeDevSecretTargetPaths);
+    }
+
+    // 渲染中间件profiles snip模版，并将渲染后的字符串加入上下文中，用于主文件渲染
+    @SuppressWarnings("unchecked")
+    private void middlewareProfilesSnipsTemplateContext(
+            Map<String, String> ctx, Map<String, Object> profiles,
+            String buildDirPath, String middleware, boolean enabled) {
+        profiles.keySet().forEach(profileKey -> {
+            Map<String, String> profile = (Map<String, String>) profiles.get(profileKey);
+            if (!profile.keySet().isEmpty()) {
+                profile.keySet().forEach(
+                    prop -> ctx.put(middleware + "_" + prop + "_" + profileKey, profile.get(prop))
+                );
+                ctx.put(
+                    middleware + "_secret_sealed_" + profileKey,
+                    enabled ? TemplateUtils.generate(
+                        ctx,
+                        buildDirPath,
+                        List.of("tmpl", "manifest", "k8s", "kustomize", profileKey, "snips", middleware,
+                                "secret-sealed.tmpl"),
+                        List.of()
+                    ) : ""
+                );
+            }
+        });
+    }
+
+    // 渲染中间件base snip模版，并将渲染后的字符串加入上下文中，用于主文件渲染
+    private void middlewareBaseSnipsTemplateContext(
+            Map<String, String> ctx, String buildDirPath, String middleware, boolean enabled) {
+        ctx.put(
+            middleware + "_init",
+            enabled ? TemplateUtils.generate(
+                ctx,
+                buildDirPath,
+                List.of("tmpl", "manifest", "k8s", "helm", "templates", "snips", middleware,
+                        "init-container.tmpl"),
+                List.of()
+            ) : ""
+        );
+        ctx.put(
+            middleware + "_secret_values",
+            enabled ? TemplateUtils.generate(
+                ctx,
+                buildDirPath,
+                List.of("tmpl", "manifest", "k8s", "helm", "templates", "snips", middleware,
+                        "secret-values.tmpl"),
+                List.of()
+            ) : ""
+        );
+        ctx.put(
+            middleware + "_secret_volumeMount",
+            enabled ? TemplateUtils.generate(
+                ctx,
+                buildDirPath,
+                List.of("tmpl", "manifest", "k8s", "helm", "templates", "snips", middleware,
+                        "secret-volume-mount.tmpl"),
+                List.of()
+            ) : ""
+        );
+        ctx.put(
+            middleware + "_secret_volume",
+            enabled ? TemplateUtils.generate(
+                ctx,
+                buildDirPath,
+                List.of("tmpl", "manifest", "k8s", "helm", "templates", "snips", middleware,
+                        "secret-volume.tmpl"),
+                List.of()
+            ) : ""
+        );
+        ctx.put(
+            middleware + "_secret_inlineValues",
+            enabled ? TemplateUtils.generate(
+                ctx,
+                buildDirPath,
+                List.of("tmpl", "manifest", "k8s", "kustomize", "base", "snips", middleware,
+                        "secret-inline-values.tmpl"),
+                List.of()
+            ) : ""
+        );
     }
 }

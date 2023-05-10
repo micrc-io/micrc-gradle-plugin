@@ -1,0 +1,23 @@
+- name: memdb-init
+          image: bitnami/redis:6.2
+          command:
+            - sh
+            - -c
+            - |
+              until redis-cli -a \$MEMDB_PASSWORD -h \$MEMDB_HOST -p \$MEMDB_PORT --no-auth-warning ping; do echo waiting for memdb; sleep 2; done;
+          env:
+            - name: MEMDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.memdb.memdbSecret }}
+                  key: {{ .Values.memdb.memdbPasswordKey }}
+            - name: MEMDB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.memdb.memdbSecret }}
+                  key: {{ .Values.memdb.memdbHostKey }}
+            - name: MEMDB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.memdb.memdbSecret }}
+                  key: {{ .Values.memdb.memdbPortKey }}

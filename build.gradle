@@ -6,21 +6,23 @@ plugins {
 }
 
 group = 'io.micrc.core'
-version = 'v0.0.1-20221228-9'
+version = 'v0.0.1-20230510-16'
 sourceCompatibility = '11'
 targetCompatibility = '11'
 
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
-    }
+ext {
+    set("spring-boot-gradle-plugin.version", '2.7.11')
+    set("jib-gradle-plugin.version", '3.3.1')
+    set("guava.version", '31.1-jre')
+    set("commons-io.version", '2.11.0')
+    set('gradle-api.version', '7.5.1')
+    set("groovy-all.version", '3.0.10')
+    set("lombok.version", '1.18.24')
+    set("swagger-parser.version", '2.0.25')
 }
 
 repositories {
     mavenLocal()
-    maven {
-        url "${ouxxa_nexus}"
-    }
     gradlePluginPortal()
     mavenCentral()
 }
@@ -28,46 +30,28 @@ repositories {
 gradlePlugin {
     plugins {
         micrcCompilation {
-            id = 'io.micrc.core.micrc.gradle.plugin'
+            id = 'io.micrc.core.gradle.plugin'
             implementationClass = 'io.micrc.core.gradle.plugin.MicrcCompilationPlugin'
         }
     }
 }
 
-
 dependencies {
-    implementation group: 'org.springframework.boot', name: 'spring-boot-gradle-plugin', version: '2.7.3'
-    implementation group: 'io.spring.dependency-management', name: 'io.spring.dependency-management.gradle.plugin', version: '1.0.13.RELEASE', ext: 'pom'
-    implementation group: 'com.google.cloud.tools', name: 'jib-gradle-plugin', version: '3.3.0'
+    implementation "org.springframework.boot:spring-boot-gradle-plugin:${property('spring-boot-gradle-plugin.version')}"
+    implementation "com.google.cloud.tools:jib-gradle-plugin:${property('jib-gradle-plugin.version')}"
+    implementation "com.google.guava:guava:${property('guava.version')}"
+    implementation "commons-io:commons-io:${property('commons-io.version')}"
 
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.13.3'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.3'
+    implementation "dev.gradleplugins:gradle-api:${property('gradle-api.version')}"
+    implementation "org.codehaus.groovy:groovy-all:${property('groovy-all.version')}"
 
-    implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
+    compileOnly "org.projectlombok:lombok:${property('lombok.version')}"
+    annotationProcessor "org.projectlombok:lombok:${property('lombok.version')}"
 
-    implementation group: 'dev.gradleplugins', name: 'gradle-api', version: '7.5.1'
-    implementation group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.10'
-
-    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
-    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
-
-    implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+    implementation "io.swagger.parser.v3:swagger-parser:${property('swagger-parser.version')}"
 }
 
-task sourcesJar(type: Jar) {
-    from sourceSets.main.allJava
-    classifier = 'sources'
-}
-
-// 执行publishToMavenLocal后，其他工程可正常引入
 publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-            artifact sourcesJar
-        }
-    }
-
     repositories {
         maven {
             name = 'colibriNexus'
