@@ -14,6 +14,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 @Slf4j
 public class TemplateUtils {
@@ -110,6 +111,22 @@ public class TemplateUtils {
             outStream.close();    //关闭文件输出流
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public static Stream<Path> listFile(Path path) {
+        try {
+            return Files.list(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String readFile(Path path) {
+        try {
+            return Files.readString(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
