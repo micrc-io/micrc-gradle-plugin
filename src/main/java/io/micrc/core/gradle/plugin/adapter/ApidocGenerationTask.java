@@ -10,13 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.gradle.api.Project;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 
 @Slf4j
 public class ApidocGenerationTask {
@@ -25,6 +22,10 @@ public class ApidocGenerationTask {
     private static final OpenAPIParser PARSER = new OpenAPIParser();
 
     private static final ParseOptions OPTIONS = new ParseOptions();
+
+    static {
+        OPTIONS.setResolveFully(true); // 替换$ref
+    }
 
     private ApidocGenerationTask() {
     }
@@ -37,27 +38,27 @@ public class ApidocGenerationTask {
     }
 
     public void mergeOpenapi(Project project) {
-        String apiDocPath = project.getProjectDir().getAbsolutePath() + File.separator + MicrcCompilationConstants.RESOURCE_DIR_PATH + File.separator + "apidoc";
+        String apiDocPath = project.getProjectDir().getAbsolutePath() + File.separator + MicrcCompilationConstants.SRC_MAIN_RESOURCES_APIDOC;
         TemplateUtils.clearDir(Path.of(apiDocPath));
-        String aggregationsPath = project.getBuildDir() + File.separator + "micrc" + File.separator + "schema" + File.separator + "aggregations";
-        listFile(Paths.get(aggregationsPath)).forEach(path -> {
+        String aggregationsPath = project.getBuildDir() + MicrcCompilationConstants.MICRC_SCHEMA_AGGREGATIONS;
+        TemplateUtils.listFile(Paths.get(aggregationsPath)).forEach(path -> {
             File file = path.toFile();
             if (file.isFile()) {
                 return;
             }
             // 获取聚合模型名称
-            Path modelDir = Paths.get(path + File.separator + "model");
-            Path modelPath = listFile(modelDir).findFirst().orElseThrow();
+            Path modelDir = Paths.get(path + MicrcCompilationConstants.MODEL);
+            Path modelPath = TemplateUtils.listFile(modelDir).findFirst().orElseThrow();
             Path fileName = modelPath.getFileName();
-            String modelContent = readFile(modelPath);
+            String modelContent = TemplateUtils.readFile(modelPath);
             OpenAPI modelAPI = PARSER.readContents(modelContent, null, OPTIONS).getOpenAPI();
             String title = modelAPI.getInfo().getTitle();
             // 获取rest协议并合并
             AtomicReference<OpenAPI> baseAPIReference = new AtomicReference<>();
             AtomicReference<String> result = new AtomicReference<>();
-            Path restDir = Paths.get(path + File.separator + "protocol" + File.separator + "rest");
-            listFile(restDir).forEach(protocolPath -> {
-                String protocolContent = readFile(protocolPath);
+            Path restDir = Paths.get(path + MicrcCompilationConstants.PROTOCOL_REST);
+            TemplateUtils.listFile(restDir).forEach(protocolPath -> {
+                String protocolContent = TemplateUtils.readFile(protocolPath);
                 OpenAPI protocolAPI = PARSER.readContents(protocolContent, null, OPTIONS).getOpenAPI();
                 OpenAPI baseAPI = baseAPIReference.get();
                 if (null == baseAPI) {
@@ -84,22 +85,6 @@ public class ApidocGenerationTask {
             TemplateUtils.saveStringToFile(filePath, result.get());
         });
         System.out.println("合并openapi协议，生成apidoc完成");
-    }
-
-    private Stream<Path> listFile(Path path) {
-        try {
-            return Files.list(path);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private String readFile(Path path) {
-        try {
-            return Files.readString(path);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 

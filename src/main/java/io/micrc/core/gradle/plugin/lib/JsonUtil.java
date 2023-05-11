@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.*;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.github.fge.jsonpatch.JsonPatch;
@@ -23,6 +24,7 @@ public class JsonUtil {
 
     static {
         OBJECT_MAPPER.setSerializationInclusion(Include.NON_NULL);
+        OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT); // 美化输出
 
         OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
