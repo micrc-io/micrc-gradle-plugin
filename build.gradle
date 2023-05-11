@@ -49,8 +49,8 @@ gradlePlugin {
             id = 'io.micrc.core.gradle.plugin'
             implementationClass = 'io.micrc.core.gradle.plugin.MicrcCompilationPlugin'
             displayName = 'micrc gradle plugin'
-            description = 'micrc gradle plugin'
-            tags.set(['micrc'])
+            description = 'A gradle plugin supports configuring project dependencies, generating code and cluster deployment files from metadata, etc.'
+            tags.set(['micrc', 'microcode', 'generator'])
         }
     }
 }
