@@ -14,7 +14,7 @@ ext {
     set("jib-gradle-plugin.version", '3.3.1')
     set("guava.version", '31.1-jre')
     set("commons-io.version", '2.11.0')
-    set('gradle-api.version', '7.5.1')
+    set('gradle-api.version', '7.6')
     set("groovy-all.version", '3.0.10')
     set("lombok.version", '1.18.24')
     set("swagger-parser.version", '2.0.25')
