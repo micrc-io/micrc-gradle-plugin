@@ -36,19 +36,23 @@ public class ProtocolOutgoingGenerationTask {
     }
 
     public void copyProtoOutgoing(Project project) {
-        String resourceAggrPath = project.getProjectDir().getAbsolutePath() + MicrcCompilationConstants.SRC_MAIN_RESOURCES_AGGREGATIONS;
-        TemplateUtils.listFile(Paths.get(resourceAggrPath)).forEach(path -> {
-            File file = path.toFile();
-            if (file.isFile()) {
-                return;
-            }
-            Path restDir = Paths.get(path + MicrcCompilationConstants.PROTOCOL_REST);
-            TemplateUtils.listFile(restDir).forEach(protocolPath -> {
-                String protocolContent = TemplateUtils.readFile(protocolPath);
-                OpenAPI protocolAPI = PARSER.readContents(protocolContent, null, OPTIONS).getOpenAPI();
-                TemplateUtils.saveStringToFile(protocolPath.toString(), JsonUtil.writeValueAsString(protocolAPI));
+        try {
+            String resourceAggrPath = project.getProjectDir().getAbsolutePath() + MicrcCompilationConstants.SRC_MAIN_RESOURCES_AGGREGATIONS;
+            TemplateUtils.listFile(Paths.get(resourceAggrPath)).forEach(path -> {
+                File file = path.toFile();
+                if (file.isFile()) {
+                    return;
+                }
+                Path restDir = Paths.get(path + MicrcCompilationConstants.PROTOCOL_REST);
+                TemplateUtils.listFile(restDir).forEach(protocolPath -> {
+                    String protocolContent = TemplateUtils.readFile(protocolPath);
+                    OpenAPI protocolAPI = PARSER.readContents(protocolContent, null, OPTIONS).getOpenAPI();
+                    TemplateUtils.saveStringToFile(protocolPath.toString(), JsonUtil.writeValueAsString(protocolAPI));
+                });
             });
-        });
-        System.out.println("还原REST协议完成");
+            System.out.println("还原REST协议完成");
+        } catch (Exception e) {
+            log.error("还原REST协议失败");
+        }
     }
 }

@@ -97,7 +97,7 @@ public class SchemaSynchronizeConfigure {
 
     private boolean obtainSchema(Project project, String branch, String repo) {
         boolean merged = true;
-        String contextName = project.getName();// .replace("-service", ""); todo
+        String contextName = project.getName().replace("-service", "");
         if (!STABLE_BRANCHES.contains(branch) && !"".equals(branch)) {
             merged = mergeScheme(project, repo, contextName);
         }

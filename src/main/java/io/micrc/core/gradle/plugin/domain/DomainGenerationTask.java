@@ -26,11 +26,14 @@ public class DomainGenerationTask {
     }
 
     public void copyModelMeta(Project project) {
-//        log.error("将openapi schema，liquibase changeset，jslt，dmn，查询规则元数据.json，技术规则元数据.json拷贝到resource对应目录下");
-        String resourceAggrPath = project.getProjectDir().getAbsolutePath() + MicrcCompilationConstants.SRC_MAIN_RESOURCES_AGGREGATIONS;
-        TemplateUtils.clearDir(Path.of(resourceAggrPath));
-        String schemaAggrPath = project.getBuildDir().getAbsolutePath() + MicrcCompilationConstants.MICRC_SCHEMA_AGGREGATIONS;
-        WorkResult result = project.copy(copySpec -> copySpec.from(schemaAggrPath).into(resourceAggrPath));
-        System.out.println("复制模式文件完成，结果：" + result.getDidWork());
+        try {
+            String resourceAggrPath = project.getProjectDir().getAbsolutePath() + MicrcCompilationConstants.SRC_MAIN_RESOURCES_AGGREGATIONS;
+            TemplateUtils.clearDir(Path.of(resourceAggrPath));
+            String schemaAggrPath = project.getBuildDir().getAbsolutePath() + MicrcCompilationConstants.MICRC_SCHEMA_AGGREGATIONS;
+            WorkResult result = project.copy(copySpec -> copySpec.from(schemaAggrPath).into(resourceAggrPath));
+            System.out.println("复制模式文件完成，结果：" + result.getDidWork());
+        } catch (Exception e) {
+            log.error("复制模式文件失败");
+        }
     }
 }

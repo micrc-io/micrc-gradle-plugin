@@ -1,4 +1,4 @@
-package io.micrc.core.gradle.plugin.schemas;//package io.micrc.core.gradle.plugin.schemas;
+//package io.micrc.core.gradle.plugin.schemas;
 //
 //import io.micrc.core.gradle.lib.JsonUtil;
 //import io.micrc.core.gradle.plugin.MicrcCompilationConstants;

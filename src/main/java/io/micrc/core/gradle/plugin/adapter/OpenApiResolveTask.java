@@ -27,7 +27,7 @@
 //            return;
 //        }
 //        Project project = this.getProject();
-//        File resourcesDir = new File(project.getProjectDir().getAbsolutePath() + File.separator + MicrcCompilationConstants.SRC_MAIN_RESOURCE);
+//        File resourcesDir = new File(project.getProjectDir().getAbsolutePath() + File.separator + MicrcCompilationConstants.RESOURCE_DIR_PATH);
 //        Schemas.protocolRelations.keySet().stream().forEach(
 //                domainName -> {
 //                    File domainDir = new File(resourcesDir + File.separator +

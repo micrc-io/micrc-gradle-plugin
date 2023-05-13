@@ -142,8 +142,8 @@ public class ProjectConfigure {
             DependencyHandler dependencies = proj.getDependencies();
             dependencies.add("implementation", "org.springframework.boot:spring-boot-starter");
             // runtime core
-            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.1-20230510-2");
-            dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.1-20230426-3");
+            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.1");
+            dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.1");
             // persistence annotations
             dependencies.add("implementation", "jakarta.persistence:jakarta.persistence-api:2.2.3");
             // spring data jpa
@@ -157,9 +157,6 @@ public class ProjectConfigure {
             dependencies.add("annotationProcessor", "org.projectlombok:lombok");
             // springboot test
             dependencies.add("testImplementation", "org.springframework.boot:spring-boot-starter-test");
-            // temp
-            dependencies.add("implementation", "org.apache.camel.springboot:camel-spring-boot-starter:3.18.1");
-            dependencies.add("implementation", "org.springframework.boot:spring-boot-starter-web");
         });
     }
 
