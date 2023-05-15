@@ -36,32 +36,44 @@ public class ManifestsGenerationTask {
         String buildDirPath = project.getBuildDir().getAbsolutePath() + File.separator + MICRC_MANIFESTS_BUILD_DIR;
         TemplateUtils.clearDir(Path.of(buildDirPath));
         Optional<Object> contextMeta = Optional.ofNullable(SchemaSynchronizeConfigure.metaData.get("contextMeta"));
+        Optional<String> ownerDomain = Optional.ofNullable(
+                (String) Eval.x(contextMeta.orElseThrow(), "x.content.ownerDomain")
+        );
         String name = project.getName().replace("-service", "");
         Optional<String> namespace = Optional.ofNullable(
-            (String) Eval.x(contextMeta.orElseThrow(), "x.content.server.namespace")
+                (String) Eval.x(contextMeta.orElseThrow(), "x.content.server.namespace")
+        );
+        Optional<String> entry = Optional.ofNullable(
+                (String) Eval.x(contextMeta.orElseThrow(), "x.content.gateway.entry")
+        );
+        Optional<String> fqdn = Optional.ofNullable(
+                (String) Eval.x(contextMeta.orElseThrow(), "x.content.gateway.fqdn")
         );
         Map<String, String> ctx = new HashMap<>(Map.of(
-            "name", name,
-            "version", project.getVersion().toString(),
-            "desc", String.format("%s chart for kubernetes", name),
-            "namespace", namespace.orElseThrow()
+                "ownerDomain", ownerDomain.orElseThrow(),
+                "name", name,
+                "version", project.getVersion().toString(),
+                "desc", String.format("%s chart for kubernetes", name),
+                "namespace", namespace.orElseThrow(),
+                "entry", entry.orElseThrow(),
+                "fqdn", fqdn.orElseThrow()
         ));
 
         // 处理中间件snip模版
         Optional<Map<String, Object>> middlewares = Optional.ofNullable(
-            (Map<String, Object>) Eval.x(contextMeta.orElseThrow(), "x.content.server.middlewares")
+                (Map<String, Object>) Eval.x(contextMeta.orElseThrow(), "x.content.server.middlewares")
         );
         middlewares.orElseThrow().keySet().forEach(middleware -> {
             boolean enabled =
-                ((Map<String, Object>) middlewares.orElseThrow().get(middleware)).get("enabled").equals("true");
+                    ((Map<String, Object>) middlewares.orElseThrow().get(middleware)).get("enabled").equals("true");
             if (enabled) {
                 ctx.put(
-                    middleware + "_provider",
-                    (String) ((Map<String, Object>) middlewares.orElseThrow().get(middleware)).get("provider")
+                        middleware + "_provider",
+                        (String) ((Map<String, Object>) middlewares.orElseThrow().get(middleware)).get("provider")
                 );
             }
             Optional<Map<String, Object>> profiles = Optional.ofNullable(
-                (Map<String, Object>) ((Map<String, Object>) middlewares.orElseThrow().get(middleware)).get("profiles")
+                    (Map<String, Object>) ((Map<String, Object>) middlewares.orElseThrow().get(middleware)).get("profiles")
             );
             middlewareBaseSnipsTemplateContext(ctx, buildDirPath, middleware, enabled);
             middlewareProfilesSnipsTemplateContext(ctx, profiles.orElseThrow(), buildDirPath, middleware, enabled);
@@ -139,6 +151,12 @@ public class ManifestsGenerationTask {
                 List.of("tmpl", "manifest", "k8s", "kustomize", "dev", "sealed-secret.yaml");
         List<String> kustomizeDevSecretTargetPaths = List.of("k8s", "kustomize", "dev", "sealed-secret.yaml");
         TemplateUtils.generate(ctx, buildDirPath, kustomizeDevSecretPaths, kustomizeDevSecretTargetPaths);
+        List<String> kustomizeDevVirtualServicePaths =
+                List.of("tmpl", "manifest", "k8s", "kustomize", "dev", "traffic-manager.yaml");
+        List<String> kustomizeDevVirtualServiceTargetPaths = List.of("k8s", "kustomize", "dev", "traffic-manager.yaml");
+        TemplateUtils.generate(
+                ctx, buildDirPath, kustomizeDevVirtualServicePaths, kustomizeDevVirtualServiceTargetPaths
+        );
     }
 
     // 渲染中间件profiles snip模版，并将渲染后的字符串加入上下文中，用于主文件渲染
@@ -150,17 +168,17 @@ public class ManifestsGenerationTask {
             Map<String, String> profile = (Map<String, String>) profiles.get(profileKey);
             if (!profile.keySet().isEmpty()) {
                 profile.keySet().forEach(
-                    prop -> ctx.put(middleware + "_" + prop + "_" + profileKey, profile.get(prop))
+                        prop -> ctx.put(middleware + "_" + prop + "_" + profileKey, profile.get(prop))
                 );
                 ctx.put(
-                    middleware + "_secret_sealed_" + profileKey,
-                    enabled ? TemplateUtils.generate(
-                        ctx,
-                        buildDirPath,
-                        List.of("tmpl", "manifest", "k8s", "kustomize", profileKey, "snips", middleware,
-                                "secret-sealed.tmpl"),
-                        List.of()
-                    ) : ""
+                        middleware + "_secret_sealed_" + profileKey,
+                        enabled ? TemplateUtils.generate(
+                                ctx,
+                                buildDirPath,
+                                List.of("tmpl", "manifest", "k8s", "kustomize", profileKey, "snips", middleware,
+                                        "secret-sealed.tmpl"),
+                                List.of()
+                        ) : ""
                 );
             }
         });
@@ -170,54 +188,54 @@ public class ManifestsGenerationTask {
     private void middlewareBaseSnipsTemplateContext(
             Map<String, String> ctx, String buildDirPath, String middleware, boolean enabled) {
         ctx.put(
-            middleware + "_init",
-            enabled ? TemplateUtils.generate(
-                ctx,
-                buildDirPath,
-                List.of("tmpl", "manifest", "k8s", "helm", "templates", "snips", middleware,
-                        "init-container.tmpl"),
-                List.of()
-            ) : ""
+                middleware + "_init",
+                enabled ? TemplateUtils.generate(
+                        ctx,
+                        buildDirPath,
+                        List.of("tmpl", "manifest", "k8s", "helm", "templates", "snips", middleware,
+                                "init-container.tmpl"),
+                        List.of()
+                ) : ""
         );
         ctx.put(
-            middleware + "_secret_values",
-            enabled ? TemplateUtils.generate(
-                ctx,
-                buildDirPath,
-                List.of("tmpl", "manifest", "k8s", "helm", "templates", "snips", middleware,
-                        "secret-values.tmpl"),
-                List.of()
-            ) : ""
+                middleware + "_secret_values",
+                enabled ? TemplateUtils.generate(
+                        ctx,
+                        buildDirPath,
+                        List.of("tmpl", "manifest", "k8s", "helm", "templates", "snips", middleware,
+                                "secret-values.tmpl"),
+                        List.of()
+                ) : ""
         );
         ctx.put(
-            middleware + "_secret_volumeMount",
-            enabled ? TemplateUtils.generate(
-                ctx,
-                buildDirPath,
-                List.of("tmpl", "manifest", "k8s", "helm", "templates", "snips", middleware,
-                        "secret-volume-mount.tmpl"),
-                List.of()
-            ) : ""
+                middleware + "_secret_volumeMount",
+                enabled ? TemplateUtils.generate(
+                        ctx,
+                        buildDirPath,
+                        List.of("tmpl", "manifest", "k8s", "helm", "templates", "snips", middleware,
+                                "secret-volume-mount.tmpl"),
+                        List.of()
+                ) : ""
         );
         ctx.put(
-            middleware + "_secret_volume",
-            enabled ? TemplateUtils.generate(
-                ctx,
-                buildDirPath,
-                List.of("tmpl", "manifest", "k8s", "helm", "templates", "snips", middleware,
-                        "secret-volume.tmpl"),
-                List.of()
-            ) : ""
+                middleware + "_secret_volume",
+                enabled ? TemplateUtils.generate(
+                        ctx,
+                        buildDirPath,
+                        List.of("tmpl", "manifest", "k8s", "helm", "templates", "snips", middleware,
+                                "secret-volume.tmpl"),
+                        List.of()
+                ) : ""
         );
         ctx.put(
-            middleware + "_secret_inlineValues",
-            enabled ? TemplateUtils.generate(
-                ctx,
-                buildDirPath,
-                List.of("tmpl", "manifest", "k8s", "kustomize", "base", "snips", middleware,
-                        "secret-inline-values.tmpl"),
-                List.of()
-            ) : ""
+                middleware + "_secret_inlineValues",
+                enabled ? TemplateUtils.generate(
+                        ctx,
+                        buildDirPath,
+                        List.of("tmpl", "manifest", "k8s", "kustomize", "base", "snips", middleware,
+                                "secret-inline-values.tmpl"),
+                        List.of()
+                ) : ""
         );
     }
 }

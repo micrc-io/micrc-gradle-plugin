@@ -18,6 +18,8 @@ helmCharts:
     releaseName: ${name}
     version: ${version}
     valuesInline:
+      podAnnotations:
+        sidecar.istio.io/inject: 'true'
       ${database_secret_inlineValues}
       ${cache_secret_inlineValues}
       ${broker_secret_inlineValues}

@@ -13,6 +13,7 @@ secretGenerator:
 resources:
   - ../base
   - ./sealed-secret.yaml
+  - ./traffic-manager.yaml
 
 patches:
   - patch: |-
