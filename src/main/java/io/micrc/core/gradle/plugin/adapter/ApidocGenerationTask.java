@@ -2,10 +2,9 @@ package io.micrc.core.gradle.plugin.adapter;
 
 import io.micrc.core.gradle.plugin.MicrcCompilationConstants;
 import io.micrc.core.gradle.plugin.lib.JsonUtil;
+import io.micrc.core.gradle.plugin.lib.SwaggerUtil;
 import io.micrc.core.gradle.plugin.lib.TemplateUtils;
-import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.parser.core.models.ParseOptions;
 import lombok.extern.slf4j.Slf4j;
 import org.gradle.api.Project;
 
@@ -18,14 +17,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 public class ApidocGenerationTask {
     private static ApidocGenerationTask instance;
-
-    private static final OpenAPIParser PARSER = new OpenAPIParser();
-
-    private static final ParseOptions OPTIONS = new ParseOptions();
-
-    static {
-        OPTIONS.setResolveFully(true); // 替换$ref
-    }
 
     private ApidocGenerationTask() {
     }
@@ -52,7 +43,7 @@ public class ApidocGenerationTask {
                 Path modelPath = TemplateUtils.listFile(modelDir).findFirst().orElseThrow();
                 Path fileName = modelPath.getFileName();
                 String modelContent = TemplateUtils.readFile(modelPath);
-                OpenAPI modelAPI = PARSER.readContents(modelContent, null, OPTIONS).getOpenAPI();
+                OpenAPI modelAPI = SwaggerUtil.readOpenApi(modelContent);
                 String title = modelAPI.getInfo().getTitle();
                 // 获取rest协议并合并
                 AtomicReference<OpenAPI> baseAPIReference = new AtomicReference<>();
@@ -60,7 +51,7 @@ public class ApidocGenerationTask {
                 Path restDir = Paths.get(path + MicrcCompilationConstants.PROTOCOL_REST);
                 TemplateUtils.listFile(restDir).forEach(protocolPath -> {
                     String protocolContent = TemplateUtils.readFile(protocolPath);
-                    OpenAPI protocolAPI = PARSER.readContents(protocolContent, null, OPTIONS).getOpenAPI();
+                    OpenAPI protocolAPI = SwaggerUtil.readOpenApi(protocolContent);
                     OpenAPI baseAPI = baseAPIReference.get();
                     if (null == baseAPI) {
                         baseAPIReference.set(protocolAPI);

@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'io.micrc.core'
-version = 'v0.0.2'
+version = 'v0.0.2.1'
 sourceCompatibility = '11'
 targetCompatibility = '11'
 
@@ -18,6 +18,7 @@ ext {
     set("groovy-all.version", '3.0.10')
     set("lombok.version", '1.18.24')
     set("swagger-parser.version", '2.0.25')
+    set("freemarker.version", '2.3.31')
 }
 
 repositories {
@@ -39,6 +40,8 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:${property('lombok.version')}"
 
     implementation "io.swagger.parser.v3:swagger-parser:${property('swagger-parser.version')}"
+
+    implementation "org.freemarker:freemarker:${property('freemarker.version')}"
 }
 
 gradlePlugin {

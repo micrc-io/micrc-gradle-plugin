@@ -146,6 +146,8 @@ public class ProjectConfigure {
             dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.1");
             // persistence annotations
             dependencies.add("implementation", "jakarta.persistence:jakarta.persistence-api:2.2.3");
+            // shiro
+            dependencies.add("implementation", "org.apache.shiro:shiro-core:1.7.1");
             // spring data jpa
             dependencies.add("implementation", "org.springframework.boot:spring-boot-starter-data-jpa");
             // kafka

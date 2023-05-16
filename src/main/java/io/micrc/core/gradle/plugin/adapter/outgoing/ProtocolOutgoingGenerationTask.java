@@ -2,10 +2,9 @@ package io.micrc.core.gradle.plugin.adapter.outgoing;
 
 import io.micrc.core.gradle.plugin.MicrcCompilationConstants;
 import io.micrc.core.gradle.plugin.lib.JsonUtil;
+import io.micrc.core.gradle.plugin.lib.SwaggerUtil;
 import io.micrc.core.gradle.plugin.lib.TemplateUtils;
-import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.parser.core.models.ParseOptions;
 import lombok.extern.slf4j.Slf4j;
 import org.gradle.api.Project;
 
@@ -16,14 +15,6 @@ import java.nio.file.Paths;
 @Slf4j
 public class ProtocolOutgoingGenerationTask {
     private static ProtocolOutgoingGenerationTask instance;
-
-    private static final OpenAPIParser PARSER = new OpenAPIParser();
-
-    private static final ParseOptions OPTIONS = new ParseOptions();
-
-    static {
-        OPTIONS.setResolveFully(true); // 替换$ref
-    }
 
     private ProtocolOutgoingGenerationTask() {
     }
@@ -46,7 +37,7 @@ public class ProtocolOutgoingGenerationTask {
                 Path restDir = Paths.get(path + MicrcCompilationConstants.PROTOCOL_REST);
                 TemplateUtils.listFile(restDir).forEach(protocolPath -> {
                     String protocolContent = TemplateUtils.readFile(protocolPath);
-                    OpenAPI protocolAPI = PARSER.readContents(protocolContent, null, OPTIONS).getOpenAPI();
+                    OpenAPI protocolAPI = SwaggerUtil.readOpenApi(protocolContent);
                     TemplateUtils.saveStringToFile(protocolPath.toString(), JsonUtil.writeValueAsString(protocolAPI));
                 });
             });
