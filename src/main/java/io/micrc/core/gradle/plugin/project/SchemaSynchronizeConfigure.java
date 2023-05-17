@@ -29,6 +29,7 @@ public class SchemaSynchronizeConfigure {
 
     private static final String CONTEXT_META_FILE = "intro.json";
 
+    private static final String BACKEND_META_FILE = "backendMetadata.json";
     private boolean configurable = false;
     private String micrcBuildPath;
     private String schemaLocation;
@@ -65,6 +66,7 @@ public class SchemaSynchronizeConfigure {
             return;
         }
         readMeta();
+        readBackendMetadata();
     }
 
     private String obtainRepoName(Project project) {
@@ -161,5 +163,13 @@ public class SchemaSynchronizeConfigure {
         }
         metaData.put("contextMeta", new JsonBuilder(new JsonSlurper().parse(metaFilePath.toFile())));
         configurable = true;
+    }
+
+    private void readBackendMetadata() {
+        Path backendMetadataFilePath = Paths.get(schemaLocation, BACKEND_META_FILE);
+        if (!Files.exists(backendMetadataFilePath)) {
+            return;
+        }
+        metaData.put("backendMeta", TemplateUtils.readFile(backendMetadataFilePath));
     }
 }

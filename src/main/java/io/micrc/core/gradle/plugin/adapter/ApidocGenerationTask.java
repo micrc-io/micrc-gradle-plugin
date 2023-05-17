@@ -54,10 +54,11 @@ public class ApidocGenerationTask {
                     OpenAPI protocolAPI = SwaggerUtil.readOpenApi(protocolContent);
                     OpenAPI baseAPI = baseAPIReference.get();
                     if (null == baseAPI) {
+                        protocolAPI.getInfo().setTitle(title);
                         baseAPIReference.set(protocolAPI);
+                        result.set(JsonUtil.writeValueAsString(protocolAPI));
                         return;
                     }
-                    baseAPI.getInfo().setTitle(title);
                     if (baseAPI.getComponents().getSchemas() == null) {
                         baseAPI.getComponents().setSchemas(new HashMap<>());
                     }

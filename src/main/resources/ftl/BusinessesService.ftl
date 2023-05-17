@@ -12,11 +12,19 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @DomainEvents(events = {
-    @Event(topicName = "a", eventName = "b", mappings = {
-        @EventMapping(mappingPath = "c", mappingKey = "d", receiverAddress = "e")
-    })
+<#if events??>
+<#list events as event>
+        @Event(topicName = "${event.topic}", eventName = "${event.event}", mappings = {
+        <#if event.mappings??>
+        <#list event.mappings as mapping>
+                @EventMapping(mappingPath = "${mapping.mappingFile}", mappingKey = "${mapping.service}", receiverAddress = "${mapping.receiver}"),
+        </#list>
+        </#if>
+        }),
+</#list>
+</#if>
 })
-@BusinessesService(custom = <#if custom?? && custom != ''>true<#else>false</#if>)
+@BusinessesService<#if custom?? && custom != ''>(custom = true)</#if>
 public interface ${logic}Service extends ApplicationBusinessesService<${logic}Command> {
 
     @Override
