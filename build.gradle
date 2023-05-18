@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'io.micrc.core'
-version = 'v0.0.4'
+version = 'v0.0.5'
 sourceCompatibility = '11'
 targetCompatibility = '11'
 
