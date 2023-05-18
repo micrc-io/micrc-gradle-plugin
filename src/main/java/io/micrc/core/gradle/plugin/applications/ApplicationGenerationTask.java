@@ -6,9 +6,11 @@ import io.micrc.core.gradle.plugin.project.SchemaSynchronizeConfigure;
 import lombok.extern.slf4j.Slf4j;
 import org.gradle.api.Project;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ApplicationGenerationTask {
@@ -51,32 +53,30 @@ public class ApplicationGenerationTask {
                     String busiJson = JsonUtil.writeValueAsString(busi);
                     map.put("logic", JsonUtil.readPath(busiJson, "/logic"));
                     // businessService
-                    ArrayList<Object> eventResult = new ArrayList<>();
-                    List events = (List) JsonUtil.readPath(busiJson, "/events");
+                    List<Object> events = (List) JsonUtil.readPath(busiJson, "/events");
                     if (events == null) {
                         return;
                     }
-                    events.forEach(even -> {
+                    Object eventResult = events.stream().map(even -> {
                         String evenJson = JsonUtil.writeValueAsString(even);
                         HashMap<String, Object> e = new HashMap<>();
                         e.put("event", JsonUtil.readPath(evenJson, "/event"));
                         e.put("topic", JsonUtil.readPath(evenJson, "/topic"));
-                        ArrayList<Object> mappingResult = new ArrayList<>();
-                        List mappings = (List) JsonUtil.readPath(evenJson, "/mappings");
+                        List<Object> mappings = (List) JsonUtil.readPath(evenJson, "/mappings");
                         if (mappings == null) {
-                            return;
+                            return null;
                         }
-                        mappings.forEach(mapp -> {
+                        Object mappingResult = mappings.stream().map(mapp -> {
                             String mappJson = JsonUtil.writeValueAsString(mapp);
                             HashMap<String, Object> r = new HashMap<>();
                             r.put("receiver", JsonUtil.readPath(mappJson, "/receiver"));
                             r.put("service", JsonUtil.readPath(mappJson, "/service"));
                             r.put("mappingFile", JsonUtil.readPath(mappJson, "/mappingFile"));
-                            mappingResult.add(r);
-                        });
+                            return r;
+                        }).collect(Collectors.toList());
                         e.put("mappings", mappingResult);
-                        eventResult.add(e);
-                    });
+                        return e;
+                    }).filter(Objects::nonNull).collect(Collectors.toList());
                     map.put("events", eventResult);
                     map.put("permission", JsonUtil.readPath(busiJson, "/permission"));
                     map.put("custom", JsonUtil.readPath(busiJson, "/custom"));
@@ -84,7 +84,62 @@ public class ApplicationGenerationTask {
                             + map.get("package") + "/" + map.get("project") + "/application/businesses/"
                             + map.get("aggregationPackage") + "/" + map.get("logic") + "Service.java";
                     FreemarkerUtil.generator("BusinessesService", map, fileName);
-                    // command todo,fill the command ftl
+                    // command
+                    Object comm = JsonUtil.readPath(busiJson, "/command");
+                    if (comm == null) {
+                        return;
+                    }
+                    String commJson = JsonUtil.writeValueAsString(comm);
+                    Object entity = JsonUtil.readPath(commJson, "/entity");
+                    map.put("entity", entity);
+                    map.put("repository", spliceRepositoryClassName(map, entity));
+                    List<Object> logicParams = (List) JsonUtil.readPath(commJson, "/logicParams");
+                    if (logicParams != null) {
+                        List<Object> paramResult = logicParams.stream().map(param -> {
+                            String paramJson = JsonUtil.writeValueAsString(param);
+                            HashMap<Object, Object> p = new HashMap<>();
+                            p.put("name", JsonUtil.readPath(paramJson, "/name"));
+                            p.put("mappingFile", JsonUtil.readPath(paramJson, "/mappingFile"));
+                            return p;
+                        }).collect(Collectors.toList());
+                        map.put("logicParams", paramResult);
+                    }
+                    List<Object> logicResults = (List) JsonUtil.readPath(commJson, "/logicResults");
+                    if (logicResults != null) {
+                        List<Object> resultResult = logicResults.stream().map(result -> {
+                            String resultJson = JsonUtil.writeValueAsString(result);
+                            HashMap<Object, Object> r = new HashMap<>();
+                            r.put("path", JsonUtil.readPath(resultJson, "/path"));
+                            r.put("mappingFile", JsonUtil.readPath(resultJson, "/mappingFile"));
+                            return r;
+                        }).collect(Collectors.toList());
+                        map.put("logicResults", resultResult);
+                    }
+                    map.put("logicType", JsonUtil.readPath(commJson, "/logicType"));
+                    map.put("logicPath", JsonUtil.readPath(commJson, "/logicPath"));
+                    map.put("autoCreate", JsonUtil.readPath(commJson, "/autoCreate"));
+                    map.put("idPath", JsonUtil.readPath(commJson, "/idPath"));
+                    List<Object> models = (List) JsonUtil.readPath(commJson, "/models");
+                    if (models != null) {
+                        HashSet<Object> valobjs = new HashSet<>();
+                        List<Object> modelResult = models.stream().map(mode -> {
+                            String modeJson = JsonUtil.writeValueAsString(mode);
+                            HashMap<String, Object> m = new HashMap<>();
+                            Object model = JsonUtil.readPath(modeJson, "/model");
+                            valobjs.add(model);
+                            m.put("model", model);
+                            m.put("protocol", JsonUtil.readPath(modeJson, "/protocol"));
+                            m.put("responseMappingFile", JsonUtil.readPath(modeJson, "/responseMappingFile"));
+                            m.put("requestMappingFile", JsonUtil.readPath(modeJson, "/requestMappingFile"));
+                            m.put("concept", JsonUtil.readPath(modeJson, "/concept"));
+                            m.put("order", JsonUtil.readPath(modeJson, "/order"));
+                            m.put("batchEvent", JsonUtil.readPath(modeJson, "/batchEvent"));
+                            m.put("batchFlag", JsonUtil.readPath(modeJson, "/batchFlag"));
+                            return m;
+                        }).collect(Collectors.toList());
+                        map.put("valobjs", valobjs);
+                        map.put("models", modelResult);
+                    }
                     fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                             + map.get("package") + "/" + map.get("project") + "/domain/"
                             + map.get("aggregationPackage") + "/command/" + map.get("logic") + "Command.java";
@@ -127,25 +182,24 @@ public class ApplicationGenerationTask {
                 presentations.forEach(pres -> {
                     String presJson = JsonUtil.writeValueAsString(pres);
                     map.put("logic", JsonUtil.readPath(presJson, "/logic"));
-                    List queries = (List) JsonUtil.readPath(presJson, "/queries");
+                    List<Object> queries = (List) JsonUtil.readPath(presJson, "/queries");
                     if (queries != null) {
-                        ArrayList<Object> queriesResult = new ArrayList<>();
-                        queries.forEach(quer -> {
+                        List<Object> queriesResult = queries.stream().map(quer -> {
                             String querJson = JsonUtil.writeValueAsString(quer);
                             HashMap<String, Object> q = new HashMap<>();
-                            q.put("repositoryClassPath", JsonUtil.readPath(querJson, "/repositoryClassPath"));
+                            Object entity = JsonUtil.readPath(querJson, "/entity");
+                            q.put("repository", spliceRepositoryClassName(map, entity));
                             q.put("concept", JsonUtil.readPath(querJson, "/concept"));
                             q.put("method", JsonUtil.readPath(querJson, "/method"));
                             q.put("order", JsonUtil.readPath(querJson, "/order"));
                             q.put("paramMappingFiles", JsonUtil.readPath(querJson, "/paramMappingFiles"));
-                            queriesResult.add(q);
-                        });
+                            return q;
+                        }).collect(Collectors.toList());
                         map.put("queries", queriesResult);
                     }
-                    List integrations = (List) JsonUtil.readPath(presJson, "/integrations");
+                    List<Object> integrations = (List) JsonUtil.readPath(presJson, "/integrations");
                     if (integrations != null) {
-                        ArrayList<Object> integrationResult = new ArrayList<>();
-                        integrations.forEach(inte -> {
+                        List<HashMap<String, Object>> integrationResult = integrations.stream().map(inte -> {
                             String inteJson = JsonUtil.writeValueAsString(inte);
                             HashMap<String, Object> i = new HashMap<>();
                             i.put("protocol", JsonUtil.readPath(inteJson, "/protocol"));
@@ -153,8 +207,8 @@ public class ApplicationGenerationTask {
                             i.put("responseMappingFile", JsonUtil.readPath(inteJson, "/responseMappingFile"));
                             i.put("concept", JsonUtil.readPath(inteJson, "/concept"));
                             i.put("order", JsonUtil.readPath(inteJson, "/order"));
-                            integrationResult.add(i);
-                        });
+                            return i;
+                        }).collect(Collectors.toList());
                         map.put("integrations", integrationResult);
                     }
                     map.put("assembler", JsonUtil.readPath(presJson, "/assembler"));
@@ -171,6 +225,14 @@ public class ApplicationGenerationTask {
             e.printStackTrace();
             log.error("根据展示服务元数据生成服务接口和实现类，及其注解异常");
         }
+    }
+
+    private Object spliceRepositoryClassName(HashMap<String, Object> map, Object entity) {
+        if (entity == null) {
+            return null;
+        }
+        return map.get("package") + "." + map.get("project") + ".domain."
+                + map.get("aggregationPackage") + ".integration." + entity + "Repository";
     }
 
     public void generateDerivationService(Project project) {

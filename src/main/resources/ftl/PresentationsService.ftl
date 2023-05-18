@@ -11,17 +11,21 @@ import org.springframework.transaction.annotation.Transactional;
 @PresentationsService(assembler = "${assembler}", queryLogics = {
 <#if queries??>
 <#list queries as query>
-        @QueryLogic(repositoryFullClassName = "${query.repositoryClassPath}", methodName = "${query.method}", name = "${query.concept}", order = ${query.order}, paramMappingFile = {
-        <#list query.paramMappingFiles as paramMappingFile>
-            "${paramMappingFile}",
-        </#list>
-        }),
+        @QueryLogic(repositoryFullClassName = "${query.repository}", methodName = "${query.method}", name = "${query.concept}",
+                <#if integrations??>order = ${query.order}, </#if>
+                paramMappingFile = {<#list query.paramMappingFiles as paramMappingFile>"${paramMappingFile}",</#list>}
+        ),
 </#list>
 </#if>
 }, integrations = {
 <#if integrations??>
 <#list integrations as integration>
-        @Integration(protocol = "${integration.protocol}", requestMappingFile = "${integration.requestMappingFile}", responseMappingFile = "${integration.responseMappingFile}", name = "${integration.concept}", order = ${integration.order}),
+        @Integration(
+                <#if integration.requestMappingFile??>requestMappingFile = "${integration.requestMappingFile}", </#if>
+                <#if integration.responseMappingFile??>responseMappingFile = "${integration.responseMappingFile}", </#if>
+                <#if integrations??>order = ${integration.order}, </#if>
+                protocol = "${integration.protocol}", name = "${integration.concept}"
+        ),
 </#list>
 </#if>
 }<#if custom?? && custom != ''>, custom = true</#if>)
