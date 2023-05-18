@@ -41,7 +41,7 @@ public class ManifestsGenerationTask {
         );
         String name = project.getName().replace("-service", "");
         Optional<String> namespace = Optional.ofNullable(
-                (String) Eval.x(contextMeta.orElseThrow(), "x.content.server.namespace")
+                (String) Eval.x(contextMeta.orElseThrow(), "x.content.namespace")
         );
         Optional<String> entry = Optional.ofNullable(
                 (String) Eval.x(contextMeta.orElseThrow(), "x.content.gateway.entry")
@@ -54,7 +54,7 @@ public class ManifestsGenerationTask {
                 "name", name,
                 "version", project.getVersion().toString(),
                 "desc", String.format("%s chart for kubernetes", name),
-                "namespace", namespace.orElseThrow(),
+                "namespace", namespace.orElseThrow() + "-" + ownerDomain.orElseThrow(),
                 "entry", entry.orElseThrow(),
                 "fqdn", fqdn.orElseThrow()
         ));

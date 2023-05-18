@@ -55,10 +55,10 @@ public class ProjectConfigure {
                 ? (String) Eval.x(contextMeta, "x.content.contextName")
                 : project.getName().replace("-service", ""));
         Optional<String> group = Optional.ofNullable(configurable
-            ? (String) Eval.x(contextMeta, "x.content.basePackages")
+            ? (String) Eval.x(contextMeta, "x.content.server.basePackages")
             : null);
         Optional<String> version = Optional.ofNullable(configurable
-            ? (String) Eval.x(contextMeta, "x.content.version")
+            ? (String) Eval.x(contextMeta, "x.content.server.version")
             : null);
         Optional<String> proxyRepoUrl =
             Optional.ofNullable(configurable

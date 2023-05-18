@@ -20,8 +20,7 @@ Then, place an `intro.json` file in the module directory of the schema directory
 {
   "ownerDomain": "demo",
   "contextName": "example",
-  "basePackages": "com.org.prod.demo.example",
-  "version": "0.0.1",
+  "namespace": "prod",
   "global": {
     "integration": {
       "proxyServerUrl": "http://x.x.x.x:xxxx",
@@ -37,7 +36,8 @@ Then, place an `intro.json` file in the module directory of the schema directory
     }
   },
   "server": {
-    "namespace": "prod-demo",
+    "basePackages": "com.org.prod.demo.example",
+    "version": "0.0.1",
     "middlewares": {
       "database": {
         "enabled": "true",
