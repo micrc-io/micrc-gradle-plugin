@@ -18,4 +18,10 @@ public class MicrcCompilationConstants {
     public static final String SRC_MAIN_RESOURCES_AGGREGATIONS = SRC_MAIN_RESOURCES + File.separator + "aggregations";
 
     public static final String MICRC_SCHEMA_AGGREGATIONS = File.separator + "micrc" + File.separator + "schema" + File.separator + "aggregations";
+
+    public static final String DB = File.separator + "db";
+
+    public static final String DB_CHANGELOG = DB + File.separator + "changelog";
+
+    public static final String SRC_MAIN_RESOURCES_DB_CHANGELOG = SRC_MAIN_RESOURCES + DB_CHANGELOG;
 }
