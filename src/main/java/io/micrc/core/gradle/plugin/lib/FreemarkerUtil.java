@@ -14,7 +14,8 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-public class FreemarkerUtil {
+public final class FreemarkerUtil {
+    private FreemarkerUtil() {}
 
     private static Configuration conf = new Configuration(Configuration.VERSION_2_3_31);
 

@@ -9,23 +9,19 @@ import io.micrc.core.gradle.plugin.manifests.ManifestsGenerationTask;
 import io.micrc.core.gradle.plugin.manifests.DeploymentConfigure;
 import io.micrc.core.gradle.plugin.project.ProjectConfigure;
 import io.micrc.core.gradle.plugin.project.SchemaSynchronizeConfigure;
-import lombok.extern.slf4j.Slf4j;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-@Slf4j
 public class MicrcCompilationPlugin implements Plugin<Project> {
 
     @Override
-    public void apply(@Nonnull Project project) {
-        // 配置参数，在task中使用
-//        project.getExtensions().create("micrc", MicrcCompilationExtensions.class);
+    public void apply(Project project) {
+//        project.getExtensions().create("micrc", MicrcCompilationExtensions.class); // 配置参数，在task中使用
         SchemaSynchronizeConfigure schema = SchemaSynchronizeConfigure.newInstance();
         schema.configure(project);
         ProjectConfigure.newInstance(schema.isConfigurable()).configure(project);

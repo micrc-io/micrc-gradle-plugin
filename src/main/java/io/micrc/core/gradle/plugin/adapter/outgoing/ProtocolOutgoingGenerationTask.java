@@ -1,6 +1,5 @@
 package io.micrc.core.gradle.plugin.adapter.outgoing;
 
-import io.micrc.core.gradle.plugin.MicrcCompilationConstants;
 import io.micrc.core.gradle.plugin.lib.JsonUtil;
 import io.micrc.core.gradle.plugin.lib.SwaggerUtil;
 import io.micrc.core.gradle.plugin.lib.TemplateUtils;
@@ -14,6 +13,12 @@ import java.nio.file.Paths;
 
 @Slf4j
 public class ProtocolOutgoingGenerationTask {
+    private static final String SRC_MAIN_RESOURCES_AGGREGATIONS =
+        File.separator + "src" + File.separator + "main" + File.separator + "resources"
+        + File.separator + "aggregations";
+
+    private static final String PROTOCOL_REST = File.separator + "protocol" + File.separator + "rest";
+
     private static ProtocolOutgoingGenerationTask instance;
 
     private ProtocolOutgoingGenerationTask() {
@@ -28,22 +33,23 @@ public class ProtocolOutgoingGenerationTask {
 
     public void copyProtoOutgoing(Project project) {
         try {
-            String resourceAggrPath = project.getProjectDir().getAbsolutePath() + MicrcCompilationConstants.SRC_MAIN_RESOURCES_AGGREGATIONS;
+            String resourceAggrPath =
+                project.getProjectDir().getAbsolutePath() + SRC_MAIN_RESOURCES_AGGREGATIONS;
             TemplateUtils.listFile(Paths.get(resourceAggrPath)).forEach(path -> {
                 File file = path.toFile();
                 if (file.isFile()) {
                     return;
                 }
-                Path restDir = Paths.get(path + MicrcCompilationConstants.PROTOCOL_REST);
+                Path restDir = Paths.get(path + PROTOCOL_REST);
                 TemplateUtils.listFile(restDir).forEach(protocolPath -> {
                     String protocolContent = TemplateUtils.readFile(protocolPath);
                     OpenAPI protocolAPI = SwaggerUtil.readOpenApi(protocolContent);
                     TemplateUtils.saveStringToFile(protocolPath.toString(), JsonUtil.writeValueAsString(protocolAPI));
                 });
             });
-            System.out.println("还原REST协议完成");
+            log.info("protocols of rpc outgoing copy complete. ");
         } catch (Exception e) {
-            log.error("还原REST协议失败");
+            log.error("protocols of rpc outgoing copy error. ", e);
         }
     }
 }

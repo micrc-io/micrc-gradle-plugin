@@ -3,7 +3,6 @@ package io.micrc.core.gradle.plugin.project;
 import groovy.util.Eval;
 import io.micrc.core.gradle.plugin.lib.TemplateUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.gradle.api.Action;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -12,8 +11,12 @@ import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.tasks.testing.Test;
-import org.gradle.language.jvm.tasks.ProcessResources;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +46,7 @@ public class ProjectConfigure {
         configureIdentity(project, contextMeta.orElseThrow(), buildType.orElse("integration"));
         configurePlugin(project);
         configureDependencies(project, contextMeta.orElseThrow(), buildType.orElse("integration"));
-        configurePropertiesFileFlatten(project);
+        configurePropertiesFile(project, contextMeta.orElseThrow());
         configureJunitTest(project);
     }
 
@@ -142,7 +145,7 @@ public class ProjectConfigure {
             DependencyHandler dependencies = proj.getDependencies();
             dependencies.add("implementation", "org.springframework.boot:spring-boot-starter");
             // runtime core
-            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.4");
+            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.6");
             dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.1");
             // persistence annotations
             dependencies.add("implementation", "jakarta.persistence:jakarta.persistence-api:2.2.3");
@@ -163,15 +166,41 @@ public class ProjectConfigure {
     }
 
     @SuppressWarnings("all")
-    private void configurePropertiesFileFlatten(Project project) {
-        log.info("configure processResources for flatten properties file: micrc.properties. ");
+    private void configurePropertiesFile(Project project, Object contextMeta) {
+        log.info("generate properties file: micrc.properties. ");
+        Optional<String> ownerDomain = Optional.ofNullable(configurable
+            ? (String) Eval.x(contextMeta, "x.content.ownerDomain")
+            : null);
+        Optional<String> publicUri = Optional.ofNullable(configurable
+            ? (String) Eval.x(contextMeta, "x.content.server.api.publicUri")
+            : null);
         Task processResources = project.getTasks().findByName("processResources");
         if (processResources != null) {
-            processResources.doFirst(new Action<>() {
-                @Override
-                public void execute(Task task) {
-                    ((ProcessResources) task).filesMatching("micrc.properties", fileCopyDetails ->
-                        fileCopyDetails.expand(project.getProperties()));
+            processResources.doLast(task -> {
+                try {
+                    Files.write(
+                        Path.of(
+                            project.getBuildDir().getAbsolutePath(),
+                            "resources",
+                            "main",
+                            "micrc.properties"
+                        ),
+                        List.of(
+                            "spring.application.name=" + project.getProperties().get("name"),
+                            "application.version=" + project.getProperties().get("version"),
+                            "micrc.domain=" + ownerDomain.orElseThrow(
+                                () -> new IllegalStateException(
+                                    "ownerDomain not found. " +
+                                    "It must be in intro.json on meta of context."
+                                )
+                            ),
+                            "micrc.api.public=" + publicUri.orElse("")
+                        ),
+                        StandardCharsets.UTF_8,
+                        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
+                    );
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             });
         }

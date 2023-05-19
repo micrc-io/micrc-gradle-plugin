@@ -115,7 +115,6 @@ public class SchemaSynchronizeConfigure {
                 project.getProjectDir().getParent() + File.separator + SCHEMA_DIR + File.separator + contextName;
         WorkResult result = project.copy(copySpec -> copySpec.from(schemaSourcePath).into(schemaLocation));
         return result.getDidWork();
-//        return false;
     }
 
     private boolean mergeScheme(Project project, String repo, String contextName) {
@@ -124,7 +123,6 @@ public class SchemaSynchronizeConfigure {
             execSpec.commandLine(gitFetch);
             execSpec.setStandardOutput(System.out);
             execSpec.setErrorOutput(System.err);
-//            execSpec.setEnvironment();
         });
         if (fetchResult.getExitValue() != 0) {
             log.error("Could not fetch repo from remote. ");
@@ -136,7 +134,6 @@ public class SchemaSynchronizeConfigure {
             execSpec.commandLine(gitRestore);
             execSpec.setStandardOutput(System.out);
             execSpec.setErrorOutput(System.err);
-//            execSpec.setEnvironment();
         });
         if (restoreResult.getExitValue() != 0) {
             log.error("Could not restore files from: " + repo + "/" + SCHEMA_BRANCH);
@@ -147,7 +144,6 @@ public class SchemaSynchronizeConfigure {
             execSpec.commandLine(gitTrack);
             execSpec.setStandardOutput(System.out);
             execSpec.setErrorOutput(System.err);
-//            execSpec.setEnvironment();
         });
         if (result.getExitValue() != 0) {
             log.error("Could not track files that restored from: " + repo + "/" + SCHEMA_BRANCH);
