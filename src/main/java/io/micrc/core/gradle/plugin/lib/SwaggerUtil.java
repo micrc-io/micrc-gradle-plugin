@@ -4,7 +4,8 @@ import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.core.models.ParseOptions;
 
-public class SwaggerUtil {
+public final class SwaggerUtil {
+    private SwaggerUtil() {}
 
     private static final OpenAPIParser PARSER = new OpenAPIParser();
 

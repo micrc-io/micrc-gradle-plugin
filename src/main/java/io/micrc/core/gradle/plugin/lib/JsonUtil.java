@@ -16,7 +16,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JsonUtil {
+public final class JsonUtil {
+    private JsonUtil() {}
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 

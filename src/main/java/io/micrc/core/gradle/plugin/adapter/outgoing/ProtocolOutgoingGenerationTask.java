@@ -32,24 +32,26 @@ public class ProtocolOutgoingGenerationTask {
     }
 
     public void copyProtoOutgoing(Project project) {
-        try {
-            String resourceAggrPath =
-                project.getProjectDir().getAbsolutePath() + SRC_MAIN_RESOURCES_AGGREGATIONS;
-            TemplateUtils.listFile(Paths.get(resourceAggrPath)).forEach(path -> {
-                File file = path.toFile();
-                if (file.isFile()) {
-                    return;
-                }
-                Path restDir = Paths.get(path + PROTOCOL_REST);
-                TemplateUtils.listFile(restDir).forEach(protocolPath -> {
-                    String protocolContent = TemplateUtils.readFile(protocolPath);
-                    OpenAPI protocolAPI = SwaggerUtil.readOpenApi(protocolContent);
-                    TemplateUtils.saveStringToFile(protocolPath.toString(), JsonUtil.writeValueAsString(protocolAPI));
-                });
-            });
-            log.info("protocols of rpc outgoing copy complete. ");
-        } catch (Exception e) {
-            log.error("protocols of rpc outgoing copy error. ", e);
-        }
+        // 逻辑问题: 为什么从src/main/resources/aggregations拷贝
+        // rest目录下读入openapi未进行处理又写回是为了校验?
+        // try {
+        //     String resourceAggrPath =
+        //         project.getProjectDir().getAbsolutePath() + SRC_MAIN_RESOURCES_AGGREGATIONS;
+        //     TemplateUtils.listFile(Paths.get(resourceAggrPath)).forEach(path -> {
+        //         File file = path.toFile();
+        //         if (file.isFile()) {
+        //             return;
+        //         }
+        //         Path restDir = Paths.get(path + PROTOCOL_REST);
+        //         TemplateUtils.listFile(restDir).forEach(protocolPath -> {
+        //             String protocolContent = TemplateUtils.readFile(protocolPath);
+        //             OpenAPI protocolAPI = SwaggerUtil.readOpenApi(protocolContent);
+        //             TemplateUtils.saveStringToFile(protocolPath.toString(), JsonUtil.writeValueAsString(protocolAPI));
+        //         });
+        //     });
+        //     log.info("protocols of rpc outgoing copy complete. ");
+        // } catch (Exception e) {
+        //     log.error("protocols of rpc outgoing copy error. ", e);
+        // }
     }
 }
