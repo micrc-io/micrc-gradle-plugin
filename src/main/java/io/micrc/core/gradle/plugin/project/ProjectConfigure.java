@@ -178,13 +178,15 @@ public class ProjectConfigure {
         if (processResources != null) {
             processResources.doLast(task -> {
                 try {
+                    Path propsFilePath = Path.of(
+                        project.getBuildDir().getAbsolutePath(),
+                        "resources",
+                        "main",
+                        "micrc.properties"
+                    );
+                    Files.deleteIfExists(propsFilePath);
                     Files.write(
-                        Path.of(
-                            project.getBuildDir().getAbsolutePath(),
-                            "resources",
-                            "main",
-                            "micrc.properties"
-                        ),
+                        propsFilePath,
                         List.of(
                             "spring.application.name=" + project.getProperties().get("name"),
                             "application.version=" + project.getProperties().get("version"),
@@ -194,7 +196,7 @@ public class ProjectConfigure {
                                     "It must be in intro.json on meta of context."
                                 )
                             ),
-                            "micrc.api.public=" + publicUri.orElse("")
+                            "micrc.api.public.uris=" + publicUri.orElse("")
                         ),
                         StandardCharsets.UTF_8,
                         StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING

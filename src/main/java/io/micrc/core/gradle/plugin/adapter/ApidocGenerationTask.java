@@ -10,7 +10,6 @@ import org.gradle.api.Project;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
@@ -68,9 +67,7 @@ public class ApidocGenerationTask {
                         result.set(JsonUtil.writeValueAsString(protocolAPI));
                         return;
                     }
-                    if (baseAPI.getComponents().getSchemas() == null) {
-                        baseAPI.getComponents().setSchemas(new HashMap<>());
-                    }
+                    baseAPI.getComponents().setSchemas(modelAPI.getComponents().getSchemas());
                     protocolAPI.getPaths().keySet().forEach(name -> {
                         baseAPI.getPaths().addPathItem(name, protocolAPI.getPaths().get(name));
                         if (protocolAPI.getComponents().getSchemas() == null) {
