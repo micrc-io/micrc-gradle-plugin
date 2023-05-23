@@ -129,13 +129,24 @@ public class SchemaSynchronizeConfigure {
             return false;
         }
         final List<String> gitRestore =
-            List.of("git", "restore", "--source", repo + "/" + SCHEMA_BRANCH, "../schema/" + contextName);
+            List.of("git", "restore", "--source", repo + "/" + SCHEMA_BRANCH, "../schema/" + contextName + "/aggregations");
         ExecResult restoreResult = project.exec(execSpec -> {
             execSpec.commandLine(gitRestore);
             execSpec.setStandardOutput(System.out);
             execSpec.setErrorOutput(System.err);
         });
         if (restoreResult.getExitValue() != 0) {
+            log.error("Could not restore files from: " + repo + "/" + SCHEMA_BRANCH);
+            return false;
+        }
+        final List<String> gitRestore2 =
+                List.of("git", "restore", "--source", repo + "/" + SCHEMA_BRANCH, "../schema/" + contextName + "/intro.json");
+        ExecResult restoreResult2 = project.exec(execSpec -> {
+            execSpec.commandLine(gitRestore2);
+            execSpec.setStandardOutput(System.out);
+            execSpec.setErrorOutput(System.err);
+        });
+        if (restoreResult2.getExitValue() != 0) {
             log.error("Could not restore files from: " + repo + "/" + SCHEMA_BRANCH);
             return false;
         }
