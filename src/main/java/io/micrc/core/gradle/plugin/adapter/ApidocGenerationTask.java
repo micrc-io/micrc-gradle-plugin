@@ -39,6 +39,7 @@ public class ApidocGenerationTask {
         try {
             String apiDocPath = project.getProjectDir().getAbsolutePath() + SRC_MAIN_RESOURCES_APIDOC;
             TemplateUtils.clearDir(Path.of(apiDocPath));
+            Files.createDirectories(Path.of(apiDocPath));
             Path aggregationsPath = Paths.get(project.getBuildDir() + MICRC_SCHEMA_AGGREGATIONS);
             if (!Files.exists(aggregationsPath)) {
                 log.warn("Unable to find aggregation path: "
