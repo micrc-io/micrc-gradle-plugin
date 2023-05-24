@@ -11,14 +11,14 @@ import java.nio.file.Paths;
 
 @Slf4j
 public class DomainGenerationTask {
-    public static final String SRC_MAIN_RESOURCES =
-            File.separator + "src" + File.separator + "main" + File.separator + "resources";
-
+    public static final String SRC_MAIN_RESOURCES = File.separator + "src" + File.separator + "main" + File.separator + "resources";
     public static final String SRC_MAIN_RESOURCES_AGGREGATIONS = SRC_MAIN_RESOURCES + File.separator + "aggregations";
-    public static final String MICRC_SCHEMA_AGGREGATIONS =
-            File.separator + "micrc" + File.separator + "schema" + File.separator + "aggregations";
-
+    public static final String SRC_MAIN_RESOURCES_CASES = SRC_MAIN_RESOURCES + File.separator + "cases";
     public static final String SRC_MAIN_RESOURCES_DB_CHANGELOG = SRC_MAIN_RESOURCES + File.separator + "db" + File.separator + "changelog";
+
+    public static final String MICRC_SCHEMA = File.separator + "micrc" + File.separator + "schema";
+    public static final String MICRC_SCHEMA_AGGREGATIONS = MICRC_SCHEMA + File.separator + "aggregations";
+    public static final String MICRC_SCHEMA_CASES = MICRC_SCHEMA + File.separator + "cases";
 
     private static DomainGenerationTask instance;
 
@@ -37,11 +37,15 @@ public class DomainGenerationTask {
 
     public void copyModelMeta(Project project) {
         try {
+            // 复制build/schema到resource(aggr和case)
             String resourceAggrPath = project.getProjectDir().getAbsolutePath() + SRC_MAIN_RESOURCES_AGGREGATIONS;
             TemplateUtils.clearDir(Path.of(resourceAggrPath));
             String schemaAggrPath = project.getBuildDir().getAbsolutePath() + MICRC_SCHEMA_AGGREGATIONS;
-            // 复制build/schema到resource
             project.copy(copySpec -> copySpec.from(schemaAggrPath).into(resourceAggrPath));
+            String resourceCasePath = project.getProjectDir().getAbsolutePath() + SRC_MAIN_RESOURCES_CASES;
+            TemplateUtils.clearDir(Path.of(resourceCasePath));
+            String schemaCasePath = project.getBuildDir().getAbsolutePath() + MICRC_SCHEMA_CASES;
+            project.copy(copySpec -> copySpec.from(schemaCasePath).into(resourceCasePath));
             // 再复制changeset文件到resource/db
             Path aggregationsPath = Paths.get(project.getBuildDir() + MICRC_SCHEMA_AGGREGATIONS);
             if (!Files.exists(aggregationsPath)) {
@@ -50,7 +54,8 @@ public class DomainGenerationTask {
                         + ", skip openapi merge, apidoc generation. "
                 );
                 return;
-            }TemplateUtils.listFile(aggregationsPath).forEach(path -> {
+            }
+            TemplateUtils.listFile(aggregationsPath).forEach(path -> {
                 Path dbFilePath = Paths.get(path.toString(), "db.yaml");
                 if (!dbFilePath.toFile().exists()) {
                     return;
