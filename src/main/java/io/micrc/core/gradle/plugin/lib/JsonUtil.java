@@ -1,4 +1,4 @@
-package io.micrc.core.gradle.plugin.lib;//package io.micrc.core.gradle.lib;
+package io.micrc.core.gradle.plugin.lib;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -7,10 +7,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.*;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,6 +41,12 @@ public final class JsonUtil {
 		OBJECT_MAPPER.registerModule(simpleModule);
 		OBJECT_MAPPER.setSerializationInclusion(Include.NON_NULL);
 		 */
+
+        SimpleModule simpleModule = new SimpleModule();
+        simpleModule.addSerializer(SecurityScheme.Type.class, new SwaggerUtil.SecuritySchemeTypeSerializer());
+        simpleModule.addSerializer(SecurityScheme.In.class, new SwaggerUtil.SecuritySchemeInSerializer());
+        OBJECT_MAPPER.registerModule(simpleModule);
+        OBJECT_NULL_MAPPER.registerModule(simpleModule);
     }
 
     public static String writeValueAsString(Object object) {
