@@ -25,12 +25,15 @@ public final class JsonUtil {
 
     private static final ObjectMapper OBJECT_NULL_MAPPER = new ObjectMapper();
 
+    private static final ObjectMapper OBJECT_INDENT_MAPPER = new ObjectMapper();
+
     static {
         OBJECT_MAPPER.setSerializationInclusion(Include.NON_NULL);
-        OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT); // 美化输出
+
+        OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
+        OBJECT_NULL_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
 
         OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
         OBJECT_NULL_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		/*
 		// 序列化和反序列化的时候针对浮点类型使用BigDecimal转换，避免精度损失和科学计数法
