@@ -4,6 +4,7 @@ import io.micrc.core.gradle.plugin.lib.JsonUtil;
 import io.micrc.core.gradle.plugin.lib.SwaggerUtil;
 import io.micrc.core.gradle.plugin.lib.TemplateUtils;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
 import lombok.extern.slf4j.Slf4j;
 import org.gradle.api.Project;
 
@@ -12,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 public class ProtocolOutgoingGenerationTask {
@@ -91,6 +93,9 @@ public class ProtocolOutgoingGenerationTask {
             String content = TemplateUtils.readFile(api);
             OpenAPI currentAPI = SwaggerUtil.readOpenApi(content);
             String aggregationName = formatName(getAggregationName(currentAPI));
+            if (aggregationName == null) {
+                return;
+            }
 
 //            MODEL_HASH_MAP.get(aggregationName).getComponents().getSchemas()
 //                    .forEach((key, value) -> currentAPI.getComponents().addSchemas(key, value));
@@ -104,8 +109,19 @@ public class ProtocolOutgoingGenerationTask {
     }
 
     private String getAggregationName(OpenAPI currentAPI) {
-        String[] split = currentAPI.getServers().get(0).getUrl().split("/");
-        return split[split.length - 1];
+        Info info = currentAPI.getInfo();
+        if (info == null) {
+            return null;
+        }
+        Map<String, Object> extensions = info.getExtensions();
+        if (extensions == null) {
+            return null;
+        }
+        Object currentAggregation = extensions.get("x-aggregation");
+        if (currentAggregation == null) {
+            return null;
+        }
+        return currentAggregation.toString();
     }
 
     private String formatName(String name) {
