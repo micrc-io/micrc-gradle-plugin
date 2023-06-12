@@ -3,6 +3,7 @@ package io.micrc.core.gradle.plugin.project;
 import com.google.common.base.CharMatcher;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
+import groovy.util.Eval;
 import io.micrc.core.gradle.plugin.lib.TemplateUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import org.gradle.process.ExecResult;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Slf4j
 @Getter
@@ -118,49 +120,71 @@ public class SchemaSynchronizeConfigure {
     }
 
     private boolean mergeScheme(Project project, String repo, String contextName) {
-        final List<String> gitFetch = List.of("git", "fetch");
-        ExecResult fetchResult = project.exec(execSpec -> {
-            execSpec.commandLine(gitFetch);
-            execSpec.setStandardOutput(System.out);
-            execSpec.setErrorOutput(System.err);
-        });
-        if (fetchResult.getExitValue() != 0) {
-            log.error("Could not fetch repo from remote. ");
+        try {
+            String caseName = findCaseNameByBranch();
+            if (caseName == null) {
+                log.error("Could not find case name from remote branch.");
+                return false;
+            }
+            Stream<List<String>> stream = Stream.of(
+                    List.of("git", "fetch"),
+                    List.of("git", "restore", "--source", repo + "/" + SCHEMA_BRANCH, "../schema/" + contextName + "/cases/" + caseName));
+            boolean fetchAndRestoreCaseResult = executeCommandAndGetResult(stream, project, repo, contextName, caseName);
+            if (!fetchAndRestoreCaseResult) {
+                return false;
+            }
+            String aggregationName = findAggregationNameInCaseIntro(project, contextName, caseName);
+            if (aggregationName == null) {
+                log.error("Could not find aggregation name from intro.");
+                return false;
+            }
+            stream = Stream.of(
+                    List.of("git", "restore", "--source", repo + "/" + SCHEMA_BRANCH, "../schema/" + contextName + "/aggregations/" + aggregationName),
+                    List.of("git", "restore", "--source", repo + "/" + SCHEMA_BRANCH, "../schema/" + contextName + "/intro.json"),
+                    List.of("git", "add", "../schema/" + contextName));
+            return executeCommandAndGetResult(stream, project, repo, contextName, aggregationName);
+        } catch (Exception e) {
+            log.error("Merge schema exception: {}", e.getLocalizedMessage());
             return false;
         }
-        final List<String> gitRestore =
-            List.of("git", "restore", "--source", repo + "/" + SCHEMA_BRANCH, "../schema/" + contextName + "/aggregations");
-        ExecResult restoreResult = project.exec(execSpec -> {
-            execSpec.commandLine(gitRestore);
-            execSpec.setStandardOutput(System.out);
-            execSpec.setErrorOutput(System.err);
-        });
-        if (restoreResult.getExitValue() != 0) {
-            log.error("Could not restore files from: " + repo + "/" + SCHEMA_BRANCH);
-            return false;
+    }
+
+    private String findAggregationNameInCaseIntro(Project project, String contextName, String caseName) {
+        String caseDir = project.getProjectDir().getParent() + "/schema/" + contextName + "/cases/" + caseName;
+        readCaseMeta(caseDir);
+        return (String) Eval.x(metaData.get("caseMeta"), "x.content.aggregationName");
+    }
+
+    private static Boolean executeCommandAndGetResult(Stream<List<String>> stream, Project project, String repo, String contextName, String caseName) {
+        return stream.map(command -> {
+                    ExecResult execResult = project.exec(execSpec -> {
+                        execSpec.commandLine(command);
+                        execSpec.setStandardOutput(System.out);
+                        execSpec.setErrorOutput(System.err);
+                    });
+                    if (execResult.getExitValue() != 0) {
+                        log.error("Could not execute command: {}", String.join(" ", command));
+                        return false;
+                    }
+                    return true;
+            }).filter(result -> !result).findFirst().orElse(true);
+    }
+
+    private static String findCaseNameByBranch() throws IOException {
+        ProcessBuilder processBuilder = new ProcessBuilder("git", "branch", "-vv");
+        Process process = processBuilder.start();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        String caseName = null;
+        while ((line = reader.readLine()) != null) {
+            if (line.startsWith("* ")) {
+                String[] lineArray = line.split(" ");
+                caseName = lineArray[3].split("\\[origin/")[1].split("]")[0];
+                break;
+            }
         }
-        final List<String> gitRestore2 =
-                List.of("git", "restore", "--source", repo + "/" + SCHEMA_BRANCH, "../schema/" + contextName + "/intro.json");
-        ExecResult restoreResult2 = project.exec(execSpec -> {
-            execSpec.commandLine(gitRestore2);
-            execSpec.setStandardOutput(System.out);
-            execSpec.setErrorOutput(System.err);
-        });
-        if (restoreResult2.getExitValue() != 0) {
-            log.error("Could not restore files from: " + repo + "/" + SCHEMA_BRANCH);
-            return false;
-        }
-        final List<String> gitTrack = List.of("git", "add", "../schema/" + contextName);
-        ExecResult result = project.exec(execSpec -> {
-            execSpec.commandLine(gitTrack);
-            execSpec.setStandardOutput(System.out);
-            execSpec.setErrorOutput(System.err);
-        });
-        if (result.getExitValue() != 0) {
-            log.error("Could not track files that restored from: " + repo + "/" + SCHEMA_BRANCH);
-            return false;
-        }
-        return true;
+        reader.close();
+        return caseName;
     }
 
     private void readMeta() {
@@ -170,6 +194,14 @@ public class SchemaSynchronizeConfigure {
         }
         metaData.put("contextMeta", new JsonBuilder(new JsonSlurper().parse(metaFilePath.toFile())));
         configurable = true;
+    }
+
+    private void readCaseMeta(String caseSchemaPath) {
+        Path metaFilePath = Paths.get(caseSchemaPath, CONTEXT_META_FILE);
+        if (!Files.exists(metaFilePath)) {
+            throw new IllegalStateException("could not obtain case info from intro.json. fix schema and retry to configure project.");
+        }
+        metaData.put("caseMeta", new JsonBuilder(new JsonSlurper().parse(metaFilePath.toFile())));
     }
 
     private void readBackendMetadata() {
