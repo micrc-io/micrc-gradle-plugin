@@ -129,7 +129,7 @@ public class SchemaSynchronizeConfigure {
             Stream<List<String>> stream = Stream.of(
                     List.of("git", "fetch"),
                     List.of("git", "restore", "--source", repo + "/" + SCHEMA_BRANCH, "../schema/" + contextName + "/cases/" + caseName));
-            boolean fetchAndRestoreCaseResult = executeCommandAndGetResult(stream, project, repo, contextName, caseName);
+            boolean fetchAndRestoreCaseResult = executeCommandAndGetResult(stream, project);
             if (!fetchAndRestoreCaseResult) {
                 return false;
             }
@@ -142,7 +142,7 @@ public class SchemaSynchronizeConfigure {
                     List.of("git", "restore", "--source", repo + "/" + SCHEMA_BRANCH, "../schema/" + contextName + "/aggregations/" + aggregationName),
                     List.of("git", "restore", "--source", repo + "/" + SCHEMA_BRANCH, "../schema/" + contextName + "/intro.json"),
                     List.of("git", "add", "../schema/" + contextName));
-            return executeCommandAndGetResult(stream, project, repo, contextName, aggregationName);
+            return executeCommandAndGetResult(stream, project);
         } catch (Exception e) {
             log.error("Merge schema exception: {}", e.getLocalizedMessage());
             return false;
@@ -155,7 +155,7 @@ public class SchemaSynchronizeConfigure {
         return (String) Eval.x(metaData.get("caseMeta"), "x.content.aggregationName");
     }
 
-    private static Boolean executeCommandAndGetResult(Stream<List<String>> stream, Project project, String repo, String contextName, String caseName) {
+    private static Boolean executeCommandAndGetResult(Stream<List<String>> stream, Project project) {
         return stream.map(command -> {
                     ExecResult execResult = project.exec(execSpec -> {
                         execSpec.commandLine(command);
@@ -179,7 +179,10 @@ public class SchemaSynchronizeConfigure {
         while ((line = reader.readLine()) != null) {
             if (line.startsWith("* ")) {
                 String[] lineArray = line.split(" ");
-                caseName = lineArray[3].split("\\[origin/")[1].split("]")[0];
+                caseName = Arrays.stream(lineArray)
+                        .filter(i -> i.startsWith("[origin/"))
+                        .map(i -> i.split("\\[origin/")[1].split("]")[0])
+                        .findFirst().orElse(null);
                 break;
             }
         }
