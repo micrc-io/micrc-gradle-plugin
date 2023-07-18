@@ -145,10 +145,12 @@ public class ProjectConfigure {
             DependencyHandler dependencies = proj.getDependencies();
             dependencies.add("implementation", "org.springframework.boot:spring-boot-starter");
             // runtime core
-            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.11");
-            dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.2");
+            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.12");
+            dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.3");
             // persistence annotations
             dependencies.add("implementation", "jakarta.persistence:jakarta.persistence-api:2.2.3");
+            // jackson annotation
+            dependencies.add("implementation", "com.fasterxml.jackson.core:jackson-annotations:2.13.5");
             // shiro
             dependencies.add("implementation", "org.apache.shiro:shiro-core:1.7.1");
             // spring data jpa
