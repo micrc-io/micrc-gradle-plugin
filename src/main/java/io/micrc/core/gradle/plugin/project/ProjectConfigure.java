@@ -145,8 +145,8 @@ public class ProjectConfigure {
             DependencyHandler dependencies = proj.getDependencies();
             dependencies.add("implementation", "org.springframework.boot:spring-boot-starter");
             // runtime core
-            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.13");
-            dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.3");
+            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.14");
+            dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.4");
             // persistence annotations
             dependencies.add("implementation", "jakarta.persistence:jakarta.persistence-api:2.2.3");
             // jackson annotation
