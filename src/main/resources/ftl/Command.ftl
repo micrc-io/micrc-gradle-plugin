@@ -1,11 +1,7 @@
-package ${package}.${project}.domain.${aggregationPackage}.command;
+package ${basePackage}.domain.${aggregationPackage}.command;
 
-import ${package}.${project}.domain.${aggregationPackage}.${entity};
-<#if valobjs??>
-<#list valobjs as obj>
-import ${package}.${project}.domain.${aggregationPackage}.valobj.${obj};
-</#list>
-</#if>
+import ${basePackage}.domain.${aggregationPackage}.${entity};
+import ${basePackage}.domain.${aggregationPackage}.valobj.*;
 import io.micrc.core.annotations.application.businesses.BatchProperty;
 import io.micrc.core.annotations.application.businesses.CommandLogic;
 import io.micrc.core.annotations.application.businesses.DeriveIntegration;
@@ -34,14 +30,12 @@ import java.util.List;
                 @TargetMapping(path = "${logicResult.path}", paramMappingFile = "${logicResult.mappingFile}"),
                 </#list>
                 </#if>
-        },
-        <#if logicType?? && logicType != ''>logicType = LogicType.${logicType},</#if>
-        <#if logicPath?? && logicPath != ''>logicPath = "${logicPath}",</#if>
+        },<#if logicType?? && logicType != ''>logicType = LogicType.${logicType}, </#if><#if logicPath?? && logicPath != ''>logicPath = "${logicPath}",</#if>
         repositoryFullClassName = "${repository}"
 )
 public class ${logic}Command {
 
-    <#if idPath?? && idPath != ''>@RepositoryIntegration(idPath = "${idPath}"<#if autoCreate?? && autoCreate>, igonreIfParamAbsent = true</#if>)</#if>
+    <#if idPath?? && idPath != ''>@RepositoryIntegration(idPath = "${idPath}"<#if autoCreate?? && autoCreate>, ignoreIfParamAbsent = true</#if><#if repositoryOrder?? && repositoryOrder != ''>, order = ${repositoryOrder}</#if>)</#if>
     private ${entity} source = new ${entity}();
 
     private ${entity} target;
@@ -50,14 +44,12 @@ public class ${logic}Command {
     <#list models as model>
     <#if model.protocol??>
     @DeriveIntegration(
-        requestMappingFile = "${model.requestMappingFile}",
-        responseMappingFile = "${model.responseMappingFile}",
-        <#if model.order??>order = ${model.order},</#if>
-        <#if model.batchFlag?? && model.batchFlag>batchFlag = true,</#if>
+        <#if model.requestMappingFile?? && model.requestMappingFile != ''>requestMappingFile = "${model.requestMappingFile}",</#if>
+        <#if model.responseMappingFile?? && model.responseMappingFile != ''>responseMappingFile = "${model.responseMappingFile}",</#if>
+        <#if model.order?? && model.order != ''>order = ${model.order},</#if><#if model.batchFlag?? && model.batchFlag>batchFlag = true,</#if>
         protocolPath = "${model.protocol}"
     )
-    </#if>
-    <#if model.batchEvent??>@BatchProperty</#if>
+    </#if><#if model.batchEvent?? && model.batchEvent>@BatchProperty</#if>
     private ${model.model} ${model.concept};
     </#list>
     </#if>

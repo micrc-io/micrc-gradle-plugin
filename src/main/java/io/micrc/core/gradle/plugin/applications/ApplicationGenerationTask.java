@@ -1,19 +1,38 @@
 package io.micrc.core.gradle.plugin.applications;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.CaseFormat;
+import groovy.util.Eval;
+import io.micrc.core.gradle.plugin.domain.DomainGenerationTask;
 import io.micrc.core.gradle.plugin.lib.FreemarkerUtil;
 import io.micrc.core.gradle.plugin.lib.JsonUtil;
+import io.micrc.core.gradle.plugin.lib.SwaggerUtil;
+import io.micrc.core.gradle.plugin.lib.TemplateUtils;
 import io.micrc.core.gradle.plugin.project.SchemaSynchronizeConfigure;
+import io.swagger.v3.oas.models.OpenAPI;
 import lombok.extern.slf4j.Slf4j;
 import org.gradle.api.Project;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class ApplicationGenerationTask {
+
+    public static final String MICRC_SCHEMA = File.separator + "micrc" + File.separator + "schema";
+    public static final String MICRC_SCHEMA_CASES = MICRC_SCHEMA + File.separator + "cases";
+
+    private static final String PROTOCOL = File.separator + "protocol";
+    private static final String PROTOCOL_API = PROTOCOL + File.separator + "api";
+    private static final String PROTOCOL_RPC_IN = PROTOCOL + File.separator + "rpc" + File.separator + "in";
     private static ApplicationGenerationTask instance;
 
     private ApplicationGenerationTask() {
@@ -27,216 +46,356 @@ public class ApplicationGenerationTask {
     }
 
     public void generateBusinessService(Project project) {
-        try {
-            String meta = (String) SchemaSynchronizeConfigure.metaData.get("backendMeta");
-            if (meta == null) {
-                System.out.println("根据业务服务元数据生成服务接口和实现类，及其注解跳过");
+        Path casesPath = Paths.get(project.getBuildDir() + MICRC_SCHEMA_CASES);
+        if (!Files.exists(casesPath)) {
+            return;
+        }
+        TemplateUtils.listFile(casesPath).forEach(path -> {
+            Path apiPath = Paths.get(path.toString(), PROTOCOL_API);
+            if (!Files.exists(apiPath)) {
                 return;
             }
-            HashMap<String, Object> map = new HashMap<>();
-            map.put("package", JsonUtil.readPath(meta, "/package"));
-            map.put("project", JsonUtil.readPath(meta, "/project"));
-            List aggregations = (List) JsonUtil.readPath(meta, "/aggregations");
-            if (aggregations == null) {
-                return;
-            }
-            aggregations.forEach(aggr -> {
-                String aggrJson = JsonUtil.writeValueAsString(aggr);
-                Object aggregation = JsonUtil.readPath(aggrJson, "/aggregation");
-                map.put("aggregation", aggregation);
-                map.put("aggregationPackage", aggregation.toString().toLowerCase());
-                List businesses = (List) JsonUtil.readPath(aggrJson, "/application/businesses");
-                if (businesses == null) {
+            String caseCode = path.getFileName().toString();
+            TemplateUtils.listFile(apiPath).forEach(api -> {
+                String s = api.getFileName().toString();
+                if (!s.startsWith("BSLG")) {
                     return;
                 }
-                businesses.forEach(busi -> {
-                    String busiJson = JsonUtil.writeValueAsString(busi);
-                    map.put("logic", JsonUtil.readPath(busiJson, "/logic"));
-                    // businessService
-                    List<Object> events = (List) JsonUtil.readPath(busiJson, "/events");
-                    if (events == null) {
-                        return;
+                HashMap<String, Object> map = new HashMap<>();
+                // basePackage
+                String basePackage = (String) Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"), "x.content.server.basePackages");
+                map.put("basePackage", basePackage);
+                // aggregationPackage
+                OpenAPI openAPI = SwaggerUtil.readOpenApi(TemplateUtils.readFile(api));
+                String aggregationCode = getAggregationCodeFromApi(openAPI);
+                String aggregationName = DomainGenerationTask.AGGREGATION_NAME_MAP.get(aggregationCode);
+                String aggregationPackage = aggregationName.toLowerCase();
+                map.put("aggregationPackage", aggregationPackage);
+                // logic name
+                String logic = openAPI.getInfo().getTitle();
+                map.put("logic", logic);
+                Map<String, Object> extensions = openAPI.getExtensions();
+                if (extensions == null) {
+                    return;
+                }
+                Object metadata = extensions.get("x-metadata");
+                JsonNode metadataNode = JsonUtil.readTree(metadata);
+                // event
+                List<Object> events = JsonUtil.writeValueAsList(metadataNode.at("/events").toString(), Object.class);
+                if (events == null) {
+                    return;
+                }
+                Object eventResult = events.stream().map(even -> {
+                    String evenJson = JsonUtil.writeValueAsString(even);
+                    HashMap<String, Object> e = new HashMap<>();
+                    e.put("event", JsonUtil.readPath(evenJson, "/event"));
+                    e.put("topic", JsonUtil.readPath(evenJson, "/topic"));
+                    List<Object> mappings = (List) JsonUtil.readPath(evenJson, "/mappings");
+                    if (mappings == null) {
+                        return null;
                     }
-                    Object eventResult = events.stream().map(even -> {
-                        String evenJson = JsonUtil.writeValueAsString(even);
-                        HashMap<String, Object> e = new HashMap<>();
-                        e.put("event", JsonUtil.readPath(evenJson, "/event"));
-                        e.put("topic", JsonUtil.readPath(evenJson, "/topic"));
-                        List<Object> mappings = (List) JsonUtil.readPath(evenJson, "/mappings");
-                        if (mappings == null) {
-                            return null;
-                        }
-                        Object mappingResult = mappings.stream().map(mapp -> {
-                            String mappJson = JsonUtil.writeValueAsString(mapp);
-                            HashMap<String, Object> r = new HashMap<>();
-                            r.put("receiver", JsonUtil.readPath(mappJson, "/receiver"));
-                            r.put("service", JsonUtil.readPath(mappJson, "/service"));
-                            r.put("mappingFile", JsonUtil.readPath(mappJson, "/mappingFile"));
-                            return r;
-                        }).collect(Collectors.toList());
-                        e.put("mappings", mappingResult);
-                        return e;
-                    }).filter(Objects::nonNull).collect(Collectors.toList());
-                    map.put("events", eventResult);
-                    map.put("permission", JsonUtil.readPath(busiJson, "/permission"));
-                    map.put("custom", JsonUtil.readPath(busiJson, "/custom"));
-                    String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
-                            + map.get("package") + "/" + map.get("project") + "/application/businesses/"
-                            + map.get("aggregationPackage") + "/" + map.get("logic") + "Service.java";
-                    FreemarkerUtil.generator("BusinessesService", map, fileName);
-                    // command
-                    Object comm = JsonUtil.readPath(busiJson, "/command");
-                    if (comm == null) {
-                        return;
-                    }
-                    String commJson = JsonUtil.writeValueAsString(comm);
-                    Object entity = JsonUtil.readPath(commJson, "/entity");
-                    map.put("entity", entity);
-                    map.put("repository", spliceRepositoryClassName(map, entity));
-                    List<Object> logicParams = (List) JsonUtil.readPath(commJson, "/logicParams");
-                    if (logicParams != null) {
-                        List<Object> paramResult = logicParams.stream().map(param -> {
-                            String paramJson = JsonUtil.writeValueAsString(param);
-                            HashMap<Object, Object> p = new HashMap<>();
-                            p.put("name", JsonUtil.readPath(paramJson, "/name"));
-                            p.put("mappingFile", JsonUtil.readPath(paramJson, "/mappingFile"));
-                            return p;
-                        }).collect(Collectors.toList());
-                        map.put("logicParams", paramResult);
-                    }
-                    List<Object> logicResults = (List) JsonUtil.readPath(commJson, "/logicResults");
-                    if (logicResults != null) {
-                        List<Object> resultResult = logicResults.stream().map(result -> {
-                            String resultJson = JsonUtil.writeValueAsString(result);
-                            HashMap<Object, Object> r = new HashMap<>();
-                            r.put("path", JsonUtil.readPath(resultJson, "/path"));
-                            r.put("mappingFile", JsonUtil.readPath(resultJson, "/mappingFile"));
-                            return r;
-                        }).collect(Collectors.toList());
-                        map.put("logicResults", resultResult);
-                    }
-                    map.put("logicType", JsonUtil.readPath(commJson, "/logicType"));
-                    map.put("logicPath", JsonUtil.readPath(commJson, "/logicPath"));
-                    map.put("autoCreate", JsonUtil.readPath(commJson, "/autoCreate"));
-                    map.put("idPath", JsonUtil.readPath(commJson, "/idPath"));
-                    List<Object> models = (List) JsonUtil.readPath(commJson, "/models");
-                    if (models != null) {
-                        HashSet<Object> valobjs = new HashSet<>();
-                        List<Object> modelResult = models.stream().map(mode -> {
-                            String modeJson = JsonUtil.writeValueAsString(mode);
-                            HashMap<String, Object> m = new HashMap<>();
-                            Object model = JsonUtil.readPath(modeJson, "/model");
-                            valobjs.add(model);
-                            m.put("model", model);
-                            m.put("protocol", JsonUtil.readPath(modeJson, "/protocol"));
-                            m.put("responseMappingFile", JsonUtil.readPath(modeJson, "/responseMappingFile"));
-                            m.put("requestMappingFile", JsonUtil.readPath(modeJson, "/requestMappingFile"));
-                            m.put("concept", JsonUtil.readPath(modeJson, "/concept"));
-                            m.put("order", JsonUtil.readPath(modeJson, "/order"));
-                            m.put("batchEvent", JsonUtil.readPath(modeJson, "/batchEvent"));
-                            m.put("batchFlag", JsonUtil.readPath(modeJson, "/batchFlag"));
-                            return m;
-                        }).collect(Collectors.toList());
-                        map.put("valobjs", valobjs);
-                        map.put("models", modelResult);
-                    }
-                    fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
-                            + map.get("package") + "/" + map.get("project") + "/domain/"
-                            + map.get("aggregationPackage") + "/command/" + map.get("logic") + "Command.java";
-                    FreemarkerUtil.generator("Command", map, fileName);
-                });
+                    Object mappingResult = mappings.stream().map(mapp -> {
+                        String mappJson = JsonUtil.writeValueAsString(mapp);
+                        HashMap<String, Object> r = new HashMap<>();
+                        r.put("receiver", JsonUtil.readPath(mappJson, "/receiver"));
+                        r.put("service", JsonUtil.readPath(mappJson, "/service"));
+                        r.put("mappingFile", spliceMappingPath((String) JsonUtil.readPath(mappJson, "/mappingFile"), aggregationCode));
+                        return r;
+                    }).collect(Collectors.toList());
+                    e.put("mappings", mappingResult);
+                    return e;
+                }).filter(Objects::nonNull).collect(Collectors.toList());
+                map.put("events", eventResult);
+                // permission
+                map.put("permission", metadataNode.at("/permission").textValue());
+                // custom
+                map.put("custom", metadataNode.at("/customService").textValue());
+                String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
+                        + basePackage.replace(".", "/") + "/application/businesses/"
+                        + aggregationPackage + "/" + logic + "Service.java";
+                FreemarkerUtil.generator("BusinessesService", map, fileName);
+                // command
+                JsonNode commandNode = metadataNode.at("/command");
+                Object comm = JsonUtil.writeObjectAsObject(commandNode, Object.class);
+                if (comm == null) {
+                    return;
+                }
+                String commJson = JsonUtil.writeValueAsString(comm);
+                Object entity = JsonUtil.readPath(commJson, "/entity");
+                map.put("entity", entity);
+                map.put("repository", spliceRepositoryClassName(map, entity));
+                List<Object> logicParams = (List) JsonUtil.readPath(commJson, "/logicParams");
+                if (logicParams != null) {
+                    List<Object> paramResult = logicParams.stream().map(param -> {
+                        String paramJson = JsonUtil.writeValueAsString(param);
+                        HashMap<Object, Object> p = new HashMap<>();
+                        p.put("name", JsonUtil.readPath(paramJson, "/name"));
+                        p.put("mappingFile", spliceMappingPath((String) JsonUtil.readPath(paramJson, "/mappingFile"), aggregationCode));
+                        return p;
+                    }).collect(Collectors.toList());
+                    map.put("logicParams", paramResult);
+                }
+                List<Object> logicResults = (List) JsonUtil.readPath(commJson, "/logicResults");
+                if (logicResults != null) {
+                    List<Object> resultResult = logicResults.stream().map(result -> {
+                        String resultJson = JsonUtil.writeValueAsString(result);
+                        HashMap<Object, Object> r = new HashMap<>();
+                        r.put("path", JsonUtil.readPath(resultJson, "/path"));
+                        r.put("mappingFile", spliceMappingPath((String) JsonUtil.readPath(resultJson, "/mappingFile"), aggregationCode));
+                        return r;
+                    }).collect(Collectors.toList());
+                    map.put("logicResults", resultResult);
+                }
+                map.put("logicType", JsonUtil.readPath(commJson, "/logicType"));
+                map.put("logicPath", JsonUtil.readPath(commJson, "/logicPath"));
+                map.put("autoCreate", JsonUtil.readPath(commJson, "/autoCreate"));
+                map.put("idPath", JsonUtil.readPath(commJson, "/idPath"));
+                map.put("repositoryOrder", JsonUtil.readPath(commJson, "/repositoryOrder"));
+                List<Object> models = (List) JsonUtil.readPath(commJson, "/models");
+                if (models != null) {
+                    HashSet<Object> valobjs = new HashSet<>();
+                    List<Object> modelResult = models.stream().map(mode -> {
+                        String modeJson = JsonUtil.writeValueAsString(mode);
+                        HashMap<String, Object> m = new HashMap<>();
+                        Object model = JsonUtil.readPath(modeJson, "/model");
+                        valobjs.add(model);
+                        m.put("model", model);
+                        m.put("protocol", spliceIntegrationProtocolPath((String) JsonUtil.readPath(modeJson, "/protocol"), caseCode));
+                        m.put("responseMappingFile", spliceMappingPath((String) JsonUtil.readPath(modeJson, "/responseMappingFile"), aggregationCode));
+                        m.put("requestMappingFile", spliceMappingPath((String) JsonUtil.readPath(modeJson, "/requestMappingFile"), aggregationCode));
+                        m.put("concept", JsonUtil.readPath(modeJson, "/concept"));
+                        m.put("order", JsonUtil.readPath(modeJson, "/order"));
+                        m.put("batchEvent", JsonUtil.readPath(modeJson, "/batchEvent"));
+                        m.put("batchFlag", JsonUtil.readPath(modeJson, "/batchFlag"));
+                        return m;
+                    }).collect(Collectors.toList());
+                    map.put("valobjs", valobjs);
+                    map.put("models", modelResult);
+                }
+                fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
+                        + basePackage.replace(".", "/") + "/domain/"
+                        + aggregationPackage + "/command/" + logic + "Command.java";
+                FreemarkerUtil.generator("Command", map, fileName);
             });
-            System.out.println("根据业务服务元数据生成服务接口和实现类，及其注解完成");
-        } catch (Exception e) {
-            log.error("根据业务服务元数据生成服务接口和实现类，及其注解异常");
-        }
+        });
     }
 
-    public void generateListenerService(Project project) {
-        log.error("根据业务服务(消息)元数据生成服务接口和实现类，及其注解");
+    private String spliceMappingPath(String fileName, String aggregationCode) {
+        if (fileName == null || fileName.isEmpty()) {
+            return "";
+        }
+        return "aggregations/" + aggregationCode + "/mapping/" + fileName;
+    }
+
+    private String spliceIntegrationProtocolPath(String fileName, String caseCode) {
+        if (fileName == null || fileName.isEmpty()) {
+            return null;
+        }
+        return "cases/" + caseCode + "/protocol/rpc/out/" + fileName;
+    }
+
+    private static String getAggregationCodeFromApi(OpenAPI openAPI) {
+        String[] urlSplit = openAPI.getServers().get(0).getUrl().split("/");
+        return urlSplit[urlSplit.length - 1].replace("-", "").toUpperCase();
+    }
+
+    public void generateMainClass(Project project) {
+        HashMap<String, Object> map = new HashMap<>();
+        String basePackage = (String) Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"), "x.content.server.basePackages");
+        map.put("basePackage", basePackage);
+        String contextName = (String) Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"), "x.content.contextName");
+        contextName = CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, contextName);
+        map.put("contextName", contextName);
+        String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
+                + basePackage.replace(".", "/") + "/" + contextName + "ServiceApplication.java";
+        FreemarkerUtil.generator("Main", map, fileName);
     }
 
     public void generatePresentationService(Project project) {
-        try {
-            String meta = (String) SchemaSynchronizeConfigure.metaData.get("backendMeta");
-            if (meta == null) {
-                System.out.println("根据业务服务元数据生成服务接口和实现类，及其注解跳过");
+        Path casesPath = Paths.get(project.getBuildDir() + MICRC_SCHEMA_CASES);
+        if (!Files.exists(casesPath)) {
+            return;
+        }
+        TemplateUtils.listFile(casesPath).forEach(path -> {
+            Path apiPath = Paths.get(path.toString(), PROTOCOL_API);
+            if (!apiPath.toFile().exists()) {
                 return;
             }
-            HashMap<String, Object> map = new HashMap<>();
-            map.put("package", JsonUtil.readPath(meta, "/package"));
-            map.put("project", JsonUtil.readPath(meta, "/project"));
-            List aggregations = (List) JsonUtil.readPath(meta, "/aggregations");
-            if (aggregations == null) {
-                return;
-            }
-            aggregations.forEach(aggr -> {
-                String aggrJson = JsonUtil.writeValueAsString(aggr);
-                Object aggregation = JsonUtil.readPath(aggrJson, "/aggregation");
-                map.put("aggregation", aggregation);
-                map.put("aggregationPackage", aggregation.toString().toLowerCase());
-                List presentations = (List) JsonUtil.readPath(aggrJson, "/application/presentations");
-                if (presentations == null) {
+            String caseCode = path.getFileName().toString();
+            TemplateUtils.listFile(apiPath).forEach(api -> {
+                String s = api.getFileName().toString();
+                if (!s.startsWith("INVE")) {
                     return;
                 }
-                presentations.forEach(pres -> {
-                    String presJson = JsonUtil.writeValueAsString(pres);
-                    map.put("logic", JsonUtil.readPath(presJson, "/logic"));
-                    List<Object> queries = (List) JsonUtil.readPath(presJson, "/queries");
-                    if (queries != null) {
-                        List<Object> queriesResult = queries.stream().map(quer -> {
-                            String querJson = JsonUtil.writeValueAsString(quer);
-                            HashMap<String, Object> q = new HashMap<>();
-                            Object entity = JsonUtil.readPath(querJson, "/entity");
-                            q.put("repository", spliceRepositoryClassName(map, entity));
-                            q.put("concept", JsonUtil.readPath(querJson, "/concept"));
-                            q.put("method", JsonUtil.readPath(querJson, "/method"));
-                            q.put("order", JsonUtil.readPath(querJson, "/order"));
-                            q.put("paramMappingFiles", JsonUtil.readPath(querJson, "/paramMappingFiles"));
-                            return q;
-                        }).collect(Collectors.toList());
-                        map.put("queries", queriesResult);
-                    }
-                    List<Object> integrations = (List) JsonUtil.readPath(presJson, "/integrations");
-                    if (integrations != null) {
-                        List<HashMap<String, Object>> integrationResult = integrations.stream().map(inte -> {
-                            String inteJson = JsonUtil.writeValueAsString(inte);
-                            HashMap<String, Object> i = new HashMap<>();
-                            i.put("protocol", JsonUtil.readPath(inteJson, "/protocol"));
-                            i.put("requestMappingFile", JsonUtil.readPath(inteJson, "/requestMappingFile"));
-                            i.put("responseMappingFile", JsonUtil.readPath(inteJson, "/responseMappingFile"));
-                            i.put("concept", JsonUtil.readPath(inteJson, "/concept"));
-                            i.put("order", JsonUtil.readPath(inteJson, "/order"));
-                            return i;
-                        }).collect(Collectors.toList());
-                        map.put("integrations", integrationResult);
-                    }
-                    map.put("assembler", JsonUtil.readPath(presJson, "/assembler"));
-                    map.put("permission", JsonUtil.readPath(presJson, "/permission"));
-                    map.put("custom", JsonUtil.readPath(presJson, "/custom"));
-                    String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
-                            + map.get("package") + "/" + map.get("project") + "/application/presentations/"
-                            + map.get("aggregationPackage") + "/" + map.get("logic") + "Service.java";
-                    FreemarkerUtil.generator("PresentationsService", map, fileName);
-                });
+                HashMap<String, Object> map = new HashMap<>();
+                // basePackage
+                String basePackage = (String) Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"), "x.content.server.basePackages");
+                map.put("basePackage", basePackage);
+                // aggregationPackage
+                OpenAPI openAPI = SwaggerUtil.readOpenApi(TemplateUtils.readFile(api));
+                String aggregationCode = getAggregationCodeFromApi(openAPI);
+                String aggregationName = DomainGenerationTask.AGGREGATION_NAME_MAP.get(aggregationCode);
+                String aggregationPackage = aggregationName.toLowerCase();
+                map.put("aggregationPackage", aggregationPackage);
+                // logic name
+                String logic = openAPI.getInfo().getTitle();
+                map.put("logic", logic);
+                Map<String, Object> extensions = openAPI.getExtensions();
+                if (extensions == null) {
+                    return;
+                }
+                Object metadata = extensions.get("x-metadata");
+                JsonNode metadataNode = JsonUtil.readTree(metadata);
+                // permission
+                map.put("permission", metadataNode.at("/permission").textValue());
+                // custom
+                map.put("custom", metadataNode.at("/customService").textValue());
+                // assembler
+                map.put("assembler", spliceMappingPath(metadataNode.at("/assembler").textValue(), aggregationCode));
+                List<Object> queries = JsonUtil.writeValueAsList(metadataNode.at("/queries").toString(), Object.class);
+                if (queries != null) {
+                    List<Object> queriesResult = queries.stream().map(quer -> {
+                        String querJson = JsonUtil.writeValueAsString(quer);
+                        HashMap<String, Object> q = new HashMap<>();
+                        Object entity = JsonUtil.readPath(querJson, "/entity");
+                        q.put("repository", spliceRepositoryClassName(map, entity));
+                        q.put("concept", JsonUtil.readPath(querJson, "/concept"));
+                        q.put("method", JsonUtil.readPath(querJson, "/method"));
+                        q.put("order", JsonUtil.readPath(querJson, "/order"));
+                        Object o = JsonUtil.readPath(querJson, "/paramMappingFiles");
+                        if (o != null) {
+                            Object collect = ((List) o).stream().map(i -> spliceMappingPath((String) i, aggregationCode)).collect(Collectors.toList());
+                            q.put("paramMappingFiles", collect);
+                        }
+                        return q;
+                    }).collect(Collectors.toList());
+                    map.put("queries", queriesResult);
+                }
+                List<Object> integrations = JsonUtil.writeValueAsList(metadataNode.at("/integrations").toString(), Object.class);
+                if (integrations != null) {
+                    List<HashMap<String, Object>> integrationResult = integrations.stream().map(inte -> {
+                        String inteJson = JsonUtil.writeValueAsString(inte);
+                        HashMap<String, Object> i = new HashMap<>();
+                        i.put("protocol", spliceIntegrationProtocolPath((String) JsonUtil.readPath(inteJson, "/protocol"), caseCode));
+                        i.put("requestMappingFile", spliceMappingPath((String) JsonUtil.readPath(inteJson, "/requestMappingFile"), aggregationCode));
+                        i.put("responseMappingFile", spliceMappingPath((String) JsonUtil.readPath(inteJson, "/responseMappingFile"), aggregationCode));
+                        i.put("concept", JsonUtil.readPath(inteJson, "/concept"));
+                        i.put("order", JsonUtil.readPath(inteJson, "/order"));
+                        return i;
+                    }).collect(Collectors.toList());
+                    map.put("integrations", integrationResult);
+                }
+                String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
+                        + basePackage.replace(".", "/") + "/application/presentations/"
+                        + aggregationPackage + "/" + logic + "Service.java";
+                FreemarkerUtil.generator("PresentationsService", map, fileName);
             });
-            System.out.println("根据展示服务元数据生成服务接口和实现类，及其注解完成");
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("根据展示服务元数据生成服务接口和实现类，及其注解异常");
-        }
+        });
     }
 
     private Object spliceRepositoryClassName(HashMap<String, Object> map, Object entity) {
         if (entity == null) {
             return null;
         }
-        return map.get("package") + "." + map.get("project") + ".domain."
-                + map.get("aggregationPackage") + ".integration." + entity + "Repository";
+        return map.get("basePackage") + ".domain." + map.get("aggregationPackage") + ".integration." + entity + "Repository";
     }
 
     public void generateDerivationService(Project project) {
-        log.error("根据衍生服务元数据生成服务接口和实现类，及其注解");
+        Path casesPath = Paths.get(project.getBuildDir() + MICRC_SCHEMA_CASES);
+        if (!Files.exists(casesPath)) {
+            return;
+        }
+        TemplateUtils.listFile(casesPath).forEach(path -> {
+            Path apiPath = Paths.get(path.toString(), PROTOCOL_RPC_IN);
+            if (!apiPath.toFile().exists()) {
+                return;
+            }
+            TemplateUtils.listFile(apiPath).forEach(api -> {
+                String s = api.getFileName().toString();
+                if (!s.startsWith("DL")) {
+                    return;
+                }
+                HashMap<String, Object> map = new HashMap<>();
+                // basePackage
+                String basePackage = (String) Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"), "x.content.server.basePackages");
+                map.put("basePackage", basePackage);
+                // aggregationPackage
+                OpenAPI openAPI = SwaggerUtil.readOpenApi(TemplateUtils.readFile(api));
+                String aggregationCode = getAggregationCodeFromApi(openAPI);
+                String aggregationName = DomainGenerationTask.AGGREGATION_NAME_MAP.get(aggregationCode);
+                String aggregationPackage = aggregationName.toLowerCase();
+                map.put("aggregationPackage", aggregationPackage);
+                // logic name
+                String logic = openAPI.getInfo().getTitle();
+                map.put("logic", logic);
+                Map<String, Object> extensions = openAPI.getExtensions();
+                if (extensions == null) {
+                    return;
+                }
+                Object metadata = extensions.get("x-metadata");
+                JsonNode metadataNode = JsonUtil.readTree(metadata);
+                // permission
+                map.put("permission", metadataNode.at("/permission").textValue());
+                // custom
+                map.put("custom", metadataNode.at("/customService").textValue());
+                // assembler
+                map.put("assembler", spliceMappingPath(metadataNode.at("/assembler").textValue(), aggregationCode));
+                List<Object> queries = JsonUtil.writeValueAsList(metadataNode.at("/queries").toString(), Object.class);
+                if (queries != null) {
+                    List<Object> queriesResult = queries.stream().map(quer -> {
+                        String querJson = JsonUtil.writeValueAsString(quer);
+                        HashMap<String, Object> q = new HashMap<>();
+                        Object entity = JsonUtil.readPath(querJson, "/entity");
+                        q.put("repository", spliceRepositoryClassName(map, entity));
+                        q.put("concept", JsonUtil.readPath(querJson, "/concept"));
+                        q.put("method", JsonUtil.readPath(querJson, "/method"));
+                        q.put("order", JsonUtil.readPath(querJson, "/order"));
+                        Object o = JsonUtil.readPath(querJson, "/paramMappingFiles");
+                        if (o != null) {
+                            Object collect = ((List) o).stream().map(i -> spliceMappingPath((String) i, aggregationCode)).collect(Collectors.toList());
+                            q.put("paramMappingFiles", collect);
+                        }
+                        return q;
+                    }).collect(Collectors.toList());
+                    map.put("queries", queriesResult);
+                }
+                List<Object> generalTechnologies = JsonUtil.writeValueAsList(metadataNode.at("/generalTechnologies").toString(), Object.class);
+                if (generalTechnologies != null) {
+                    List<HashMap<String, Object>> generalTechnologiesResult = generalTechnologies.stream().map(ge -> {
+                        String geJson = JsonUtil.writeValueAsString(ge);
+                        HashMap<String, Object> i = new HashMap<>();
+                        i.put("name", JsonUtil.readPath(geJson, "/name"));
+                        i.put("paramMappingFile", spliceMappingPath((String) JsonUtil.readPath(geJson, "/paramMappingFile"), aggregationCode));
+                        i.put("variableMappingFile", spliceMappingPath((String) JsonUtil.readPath(geJson, "/variableMappingFile"), aggregationCode));
+                        i.put("routeContentPath", JsonUtil.readPath(geJson, "/routeContentPath"));
+                        i.put("routeXmlFilePath", JsonUtil.readPath(geJson, "/routeXmlFilePath"));
+                        i.put("order", JsonUtil.readPath(geJson, "/order"));
+                        return i;
+                    }).collect(Collectors.toList());
+                    map.put("generalTechnologies", generalTechnologiesResult);
+                }
+                List<Object> specialTechnologies = JsonUtil.writeValueAsList(metadataNode.at("/specialTechnologies").toString(), Object.class);
+                if (specialTechnologies != null) {
+                    List<HashMap<String, Object>> specialTechnologiesResult = specialTechnologies.stream().map(ge -> {
+                        String geJson = JsonUtil.writeValueAsString(ge);
+                        HashMap<String, Object> i = new HashMap<>();
+                        i.put("name", JsonUtil.readPath(geJson, "/name"));
+                        i.put("paramMappingFile", spliceMappingPath((String) JsonUtil.readPath(geJson, "/paramMappingFile"), aggregationCode));
+                        i.put("variableMappingFile", spliceMappingPath((String) JsonUtil.readPath(geJson, "/variableMappingFile"), aggregationCode));
+                        i.put("technologyType", JsonUtil.readPath(geJson, "/technologyType"));
+                        i.put("scriptFilePath", JsonUtil.readPath(geJson, "/scriptFilePath"));
+                        i.put("scriptContentPath", JsonUtil.readPath(geJson, "/scriptContentPath"));
+                        i.put("order", JsonUtil.readPath(geJson, "/order"));
+                        return i;
+                    }).collect(Collectors.toList());
+                    map.put("specialTechnologies", specialTechnologiesResult);
+                }
+                String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
+                        + basePackage.replace(".", "/") + "/application/derivation/"
+                        + aggregationPackage + "/" + logic + "Service.java";
+                FreemarkerUtil.generator("DerivationsService", map, fileName);
+            });
+        });
     }
 
 }

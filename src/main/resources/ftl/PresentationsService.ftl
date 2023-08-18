@@ -1,4 +1,4 @@
-package ${package}.${project}.application.presentations.${aggregationPackage};
+package ${basePackage}.application.presentations.${aggregationPackage};
 
 import io.micrc.core.annotations.application.presentations.Integration;
 import io.micrc.core.annotations.application.presentations.PresentationsExecution;
@@ -8,11 +8,11 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-@PresentationsService(assembler = "${assembler}", queryLogics = {
+@PresentationsService(queryLogics = {
 <#if queries??>
 <#list queries as query>
         @QueryLogic(repositoryFullClassName = "${query.repository}", methodName = "${query.method}", name = "${query.concept}",
-                <#if integrations??>order = ${query.order}, </#if>
+                <#if query.order?? && query.order != ''>order = ${query.order}, </#if>
                 paramMappingFile = {<#list query.paramMappingFiles as paramMappingFile>"${paramMappingFile}",</#list>}
         ),
 </#list>
@@ -21,14 +21,14 @@ import org.springframework.transaction.annotation.Transactional;
 <#if integrations??>
 <#list integrations as integration>
         @Integration(
-                <#if integration.requestMappingFile??>requestMappingFile = "${integration.requestMappingFile}", </#if>
-                <#if integration.responseMappingFile??>responseMappingFile = "${integration.responseMappingFile}", </#if>
-                <#if integrations??>order = ${integration.order}, </#if>
+                <#if integration.requestMappingFile?? && integration.requestMappingFile != ''>requestMappingFile = "${integration.requestMappingFile}", </#if>
+                <#if integration.responseMappingFile?? && integration.responseMappingFile != ''>responseMappingFile = "${integration.responseMappingFile}", </#if>
+                <#if integration.order?? && integration.order != ''>order = ${integration.order}, </#if>
                 protocol = "${integration.protocol}", name = "${integration.concept}"
         ),
 </#list>
 </#if>
-}<#if custom?? && custom != ''>, custom = true</#if>)
+}<#if custom?? && custom != ''>, custom = true</#if>, assembler = "${assembler}")
 public interface ${logic}Service {
 
     String execute(String param);

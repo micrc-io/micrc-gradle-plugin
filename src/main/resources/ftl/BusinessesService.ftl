@@ -1,6 +1,6 @@
-package ${package}.${project}.application.businesses.${aggregationPackage};
+package ${basePackage}.application.businesses.${aggregationPackage};
 
-import ${package}.${project}.domain.${aggregationPackage}.command.${logic}Command;
+import ${basePackage}.domain.${aggregationPackage}.command.${logic}Command;
 import io.micrc.core.annotations.application.businesses.BusinessesExecution;
 import io.micrc.core.annotations.application.businesses.BusinessesService;
 import io.micrc.core.annotations.message.DomainEvents;

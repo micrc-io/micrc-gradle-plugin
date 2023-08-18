@@ -101,17 +101,12 @@ public class MicrcCompilationPlugin implements Plugin<Project> {
             .create("generateDerivationAdapter",
                 task -> ProtocolIncomingGenerationTask.newInstance().generateDerivationAdapter(project));
         tasks.add(generateDerivationAdapter);
-        // 根据消息注册元数据生成消息监听适配器和业务服务接口及自定义实现类(包括注解)
-        Task generateListenerService = project
+        // 生成主类
+        Task generateMainClass = project
             .getTasks()
-            .create("generateListenerService",
-                task -> ApplicationGenerationTask.newInstance().generateListenerService(project));
-        tasks.add(generateListenerService);
-        Task generateListenerAdapter = project
-            .getTasks()
-            .create("generateListenerAdapter",
-                task -> ProtocolIncomingGenerationTask.newInstance().generateListenerAdapter(project));
-        tasks.add(generateListenerAdapter);
+            .create("generateMainClass",
+                task -> ApplicationGenerationTask.newInstance().generateMainClass(project));
+        tasks.add(generateMainClass);
 
         // 加入micrc组并调整执行顺序
         Task starter = project.getTasks().getByName("processResources");
