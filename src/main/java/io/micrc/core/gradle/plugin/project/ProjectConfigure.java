@@ -145,7 +145,7 @@ public class ProjectConfigure {
             DependencyHandler dependencies = proj.getDependencies();
             dependencies.add("implementation", "org.springframework.boot:spring-boot-starter");
             // runtime core
-            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.14");
+            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.15");
             dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.4");
             // persistence annotations
             dependencies.add("implementation", "jakarta.persistence:jakarta.persistence-api:2.2.3");
@@ -173,6 +173,12 @@ public class ProjectConfigure {
         Optional<String> ownerDomain = Optional.ofNullable(configurable
             ? (String) Eval.x(contextMeta, "x.content.ownerDomain")
             : null);
+        Optional<String> namespace = Optional.ofNullable(configurable
+                ? (String) Eval.x(contextMeta, "x.content.namespace")
+                : null);
+        Optional<String> contextName = Optional.ofNullable(configurable
+                ? (String) Eval.x(contextMeta, "x.content.contextName")
+                : null);
         Optional<String> publicUri = Optional.ofNullable(configurable
             ? (String) Eval.x(contextMeta, "x.content.server.api.publicUri")
             : null);
@@ -198,7 +204,8 @@ public class ProjectConfigure {
                                     "It must be in intro.json on meta of context."
                                 )
                             ),
-                            "micrc.api.public.uris=" + publicUri.orElse("")
+                            "micrc.api.public.uris=" + publicUri.orElse(""),
+                            "micrc.x-host=" + namespace.orElseThrow() + "." + ownerDomain.orElseThrow() + "." + contextName.orElseThrow()
                         ),
                         StandardCharsets.UTF_8,
                         StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
