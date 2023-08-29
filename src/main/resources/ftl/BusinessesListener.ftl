@@ -17,7 +17,7 @@ public interface ${event}Listener {
 
     void adapt(ConsumerRecord<?, ?> consumerRecord, Acknowledgment acknowledgment) throws IOException;
 
-    @Component("${event}Listener")
+    @Component("${event}Listener-${logic}Service")
     class ${event}ListenerImpl implements ${event}Listener {
 
         @KafkaListener(

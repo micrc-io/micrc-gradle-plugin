@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -87,16 +88,19 @@ public class ProtocolIncomingGenerationTask {
                             + aggregationPackage + "/" + logic + "Adapter.java";
                     FreemarkerUtil.generator("BusinessesAdapter", map, fileName);
                 } else if ("LISTENER".equals(portType)) {
-                    // event
-                    String event = metadataNode.at("/event").textValue();
-                    map.put("event", event);
-                    // topic
-                    String topic = metadataNode.at("/topic").textValue();
-                    map.put("topic", topic);
-                    String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
-                            + basePackage.replace(".", "/") + "/infrastructure/message/"
-                            + aggregationPackage + "/" + event + "Listener.java";
-                    FreemarkerUtil.generator("BusinessesListener", map, fileName);
+                    List<Object> listeners = JsonUtil.writeValueAsList(metadataNode.at("/listeners").toString(), Object.class);
+                    listeners.forEach(listener -> {
+                        String listenerJson = JsonUtil.writeValueAsString(listener);
+                        // event
+                        Object event = JsonUtil.readPath(listenerJson, "/event");
+                        map.put("event", event);
+                        // topic
+                        map.put("topic", JsonUtil.readPath(listenerJson, "/topic"));
+                        String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
+                                + basePackage.replace(".", "/") + "/infrastructure/message/"
+                                + aggregationPackage + "/" + event + "Listener.java";
+                        FreemarkerUtil.generator("BusinessesListener", map, fileName);
+                    });
                 } else if ("SCHEDULE".equals(portType)) {
                     // cron
                     String cron = metadataNode.at("/cron").textValue();
