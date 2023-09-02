@@ -149,10 +149,9 @@ public class DomainGenerationTask {
             List<String> paramTypes = JsonUtil.writeValueAsList(paramTypesString, String.class);
             ArrayList<Object> paramList = new ArrayList<>();
             for (int i = 0; i < paramTypes.size(); i++) {
-                String paramType = paramTypes.get(i);
-                paramType = getParamType(allSchemas, paramType);
+                String paramTypeString = paramTypes.get(i);
                 HashMap<String, Object> paramMap = new HashMap<>();
-                paramMap.put("type", paramType);
+                paramMap.put("type", getParamType(allSchemas, paramTypeString));
                 paramMap.put("index", i);
                 paramList.add(paramMap);
             }
@@ -178,7 +177,7 @@ public class DomainGenerationTask {
             Map<String, Object> propertyExtensions = null;
             if (null == $ref) {
                 // 基本类型
-                modelType = mapJsonType2JavaType(property.getType());
+                modelType = mapJsonType2JavaType(property.getType(), property.getFormat());
                 propertyExtensions = property.getExtensions();
             } else {
                 // 值对象
@@ -201,14 +200,14 @@ public class DomainGenerationTask {
         map.put("properties", propertyMapList);
     }
 
-    private String getParamType(Map<String, Schema> allSchemas, String paramType) {
-        if (!paramType.startsWith("#")) {
-            paramType = mapJsonType2JavaType(paramType);
+    private String getParamType(Map<String, Schema> allSchemas, String paramTypeString) {
+        if (!paramTypeString.startsWith("#")) {
+            String[] split = paramTypeString.split(",");
+            return mapJsonType2JavaType(split[0], split.length == 2 ? split[1] : null);
         } else {
-            String refPropertyName = splitRefName(paramType);
-            paramType = mapSchema2JavaType(refPropertyName, allSchemas);
+            String refPropertyName = splitRefName(paramTypeString);
+            return mapSchema2JavaType(refPropertyName, allSchemas);
         }
-        return paramType;
     }
 
     private String mapSchema2JavaType(String refPropertyName, Map<String, Schema> allSchemas) {
@@ -219,7 +218,9 @@ public class DomainGenerationTask {
             Object item$ref = JsonUtil.readPath(itemsRefString, "/$ref");
             String itemTypeName;
             if (item$ref == null) {
-                itemTypeName = mapJsonType2JavaType((String) JsonUtil.readPath(itemsRefString, "/type"));
+                String type = (String) JsonUtil.readPath(itemsRefString, "/type");
+                String format = (String) JsonUtil.readPath(itemsRefString, "/format");
+                itemTypeName = mapJsonType2JavaType(type, format);
             } else {
                 itemTypeName = splitRefName((String) item$ref);
                 itemTypeName = mapSchema2JavaType(itemTypeName, allSchemas);
@@ -228,7 +229,7 @@ public class DomainGenerationTask {
         } else if ("object".equals(refProperty.getType())) {
             modelType = refPropertyName;
         } else {
-            modelType = mapJsonType2JavaType(refProperty.getType());
+            modelType = mapJsonType2JavaType(refProperty.getType(), refProperty.getFormat());
         }
         return modelType;
     }
@@ -238,15 +239,19 @@ public class DomainGenerationTask {
         return split[split.length - 1];
     }
 
-    private String mapJsonType2JavaType(String jsonType) {
+    private String mapJsonType2JavaType(String jsonType, String format) {
         if ("object".equals(jsonType)) {
             return "Object";
         } else if ("string".equals(jsonType)) {
             return "String";
         } else if ("integer".equals(jsonType)) {
-            return "Integer";
+            if ("int64".equals(format)) {
+                return "Long";
+            } else {
+                return "Integer";
+            }
         } else if ("number".equals(jsonType)) {
-            return "Long";
+            return "Double";
         } else if ("boolean".equals(jsonType)) {
             return "Boolean";
         } else if ("array".equals(jsonType)) {
