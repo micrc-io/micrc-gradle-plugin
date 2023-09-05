@@ -76,7 +76,10 @@ public class DomainGenerationTask {
                 } else {
                     return null;
                 }
-            }).filter(Objects::nonNull).findFirst().orElseThrow();
+            }).filter(Objects::nonNull).findFirst().orElse(null);
+            if (aggregationName == null) {
+                return;
+            }
             AGGREGATION_NAME_MAP.put(path.toFile().getName(), aggregationName);
             String aggregationPackage = aggregationName.toLowerCase();
             map.put("aggregationPackage", aggregationPackage);

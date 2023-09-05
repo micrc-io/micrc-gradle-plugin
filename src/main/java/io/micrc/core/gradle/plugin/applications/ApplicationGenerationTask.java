@@ -69,6 +69,9 @@ public class ApplicationGenerationTask {
                 OpenAPI openAPI = SwaggerUtil.readOpenApi(TemplateUtils.readFile(api));
                 String aggregationCode = getAggregationCodeFromApi(openAPI);
                 String aggregationName = DomainGenerationTask.AGGREGATION_NAME_MAP.get(aggregationCode);
+                if (aggregationName == null) {
+                    return;
+                }
                 String aggregationPackage = aggregationName.toLowerCase();
                 map.put("aggregationPackage", aggregationPackage);
                 // logic name
@@ -235,6 +238,9 @@ public class ApplicationGenerationTask {
                 OpenAPI openAPI = SwaggerUtil.readOpenApi(TemplateUtils.readFile(api));
                 String aggregationCode = getAggregationCodeFromApi(openAPI);
                 String aggregationName = DomainGenerationTask.AGGREGATION_NAME_MAP.get(aggregationCode);
+                if (aggregationName == null) {
+                    return;
+                }
                 String aggregationPackage = aggregationName.toLowerCase();
                 map.put("aggregationPackage", aggregationPackage);
                 // logic name
@@ -323,6 +329,9 @@ public class ApplicationGenerationTask {
                 OpenAPI openAPI = SwaggerUtil.readOpenApi(TemplateUtils.readFile(api));
                 String aggregationCode = getAggregationCodeFromApi(openAPI);
                 String aggregationName = DomainGenerationTask.AGGREGATION_NAME_MAP.get(aggregationCode);
+                if (aggregationName == null) {
+                    return;
+                }
                 String aggregationPackage = aggregationName.toLowerCase();
                 map.put("aggregationPackage", aggregationPackage);
                 // logic name
