@@ -101,7 +101,7 @@ public class ProtocolIncomingGenerationTask {
                         map.put("topic", JsonUtil.readPath(listenerJson, "/topic"));
                         String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                                 + basePackage.replace(".", "/") + "/infrastructure/message/"
-                                + aggregationPackage + "/" + event + "Listener.java";
+                                + aggregationPackage + "/" + event + logic + "Listener.java";
                         FreemarkerUtil.generator("BusinessesListener", map, fileName);
                     });
                 } else if ("SCHEDULE".equals(portType)) {

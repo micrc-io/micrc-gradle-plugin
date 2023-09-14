@@ -13,15 +13,15 @@ import java.io.IOException;
         commandServicePath = "${basePackage}.application.businesses.${aggregationPackage}.${logic}Service",
         eventName = "${event}"
 )
-public interface ${event}Listener {
+public interface ${event}${logic}Listener {
 
     void adapt(ConsumerRecord<?, ?> consumerRecord, Acknowledgment acknowledgment) throws IOException;
 
-    @Component("${event}Listener-${logic}Service")
-    class ${event}ListenerImpl implements ${event}Listener {
+    @Component("${event}${logic}Listener")
+    class ${event}${logic}ListenerImpl implements ${event}${logic}Listener {
 
         @KafkaListener(
-                topics = {"${topic}"}, autoStartup = "true", concurrency = "3"
+                topics = {"${topic}"}, groupId = "${event}${logic}", autoStartup = "true", concurrency = "3"
         )
         @Override
         @MessageExecution
