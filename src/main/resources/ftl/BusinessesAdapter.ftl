@@ -3,9 +3,13 @@ package ${basePackage}.infrastructure.command.${aggregationPackage};
 import io.micrc.core.annotations.integration.command.CommandAdapter;
 import org.springframework.stereotype.Component;
 
-@CommandAdapter(serviceName = "${logic}Service", <#if custom?? && custom != ''>custom = true,</#if>
-    <#if requestMappingFile?? && requestMappingFile != ''>requestMappingFile = "${requestMappingFile}",</#if><#if responseMappingFile?? && responseMappingFile != ''>responseMappingFile = "${responseMappingFile}",</#if>
-    protocolPath = "${protocolPath}", rootEntityName = "${rootEntityName}"
+@CommandAdapter(
+    serviceName = "${logic}Service",
+    <#if custom?? && custom != ''>custom = true,
+    </#if><#if requestMappingFile?? && requestMappingFile != ''>requestMappingFile = "${requestMappingFile}",
+    </#if><#if responseMappingFile?? && responseMappingFile != ''>responseMappingFile = "${responseMappingFile}",
+    </#if>protocolPath = "${protocolPath}",
+    rootEntityName = "${rootEntityName}"
 )
 public interface ${logic}Adapter {
 

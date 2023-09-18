@@ -21,10 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 <#if integrations??>
 <#list integrations as integration>
         @Integration(
-                <#if integration.requestMappingFile?? && integration.requestMappingFile != ''>requestMappingFile = "${integration.requestMappingFile}", </#if>
-                <#if integration.responseMappingFile?? && integration.responseMappingFile != ''>responseMappingFile = "${integration.responseMappingFile}", </#if>
-                <#if integration.order?? && integration.order != ''>order = ${integration.order}, </#if>
-                protocol = "${integration.protocol}", name = "${integration.concept}"
+                <#if integration.requestMappingFile?? && integration.requestMappingFile != ''>requestMappingFile = "${integration.requestMappingFile}",
+                </#if><#if integration.responseMappingFile?? && integration.responseMappingFile != ''>responseMappingFile = "${integration.responseMappingFile}",
+                </#if><#if integration.order?? && integration.order != ''>order = ${integration.order},
+                </#if><#if integration.ignoreIfParamAbsent?? && integration.ignoreIfParamAbsent>ignoreIfParamAbsent = true,
+                </#if>protocol = "${integration.protocol}", name = "${integration.concept}"
         ),
 </#list>
 </#if>

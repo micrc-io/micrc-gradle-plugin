@@ -8,8 +8,11 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-<#if runnerOrder?? && runnerOrder != ''>@Order(${runnerOrder})</#if>
-@RunnerAdapter(serviceName = "${logic}Service", executePath = "${dataPath}")
+<#if runnerOrder?? && runnerOrder != ''>@Order(${runnerOrder})
+</#if>@RunnerAdapter(
+    serviceName = "${logic}Service",
+    executePath = "${dataPath}"
+)
 public interface ${logic}Runner extends ApplicationRunner {
 
     @Component("${logic}Runner")

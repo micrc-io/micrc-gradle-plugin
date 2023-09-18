@@ -30,8 +30,10 @@ import java.util.List;
                 @TargetMapping(path = "${logicResult.path}", paramMappingFile = "${logicResult.mappingFile}"),
                 </#list>
                 </#if>
-        },<#if logicType?? && logicType != ''>logicType = LogicType.${logicType}, </#if><#if logicPath?? && logicPath != ''>logicPath = "${logicPath}",</#if>
-        repositoryFullClassName = "${repository}"
+        },
+        <#if logicType?? && logicType != ''>logicType = LogicType.${logicType},
+        </#if><#if logicPath?? && logicPath != ''>logicPath = "${logicPath}",
+        </#if>repositoryFullClassName = "${repository}"
 )
 public class ${logic}Command {
 
@@ -40,21 +42,23 @@ public class ${logic}Command {
 
     private ${entity} target;
 
-    <#if models??>
-    <#list models as model>
-    <#if model.protocol??>
-    @DeriveIntegration(
-        <#if model.requestMappingFile?? && model.requestMappingFile != ''>requestMappingFile = "${model.requestMappingFile}",</#if>
-        <#if model.responseMappingFile?? && model.responseMappingFile != ''>responseMappingFile = "${model.responseMappingFile}",</#if>
-        <#if model.order?? && model.order != ''>order = ${model.order},</#if><#if model.batchFlag?? && model.batchFlag>batchFlag = true,</#if>
-        protocolPath = "${model.protocol}"
-    )
-    </#if><#if model.batchEvent?? && model.batchEvent>@BatchProperty</#if>
-    private ${model.model} ${model.concept};
-    </#list>
-    </#if>
-
     private ErrorInfo error = new ErrorInfo();
 
     private EventInfo event = new EventInfo();
+
+    <#if models??>
+    <#list models as model>
+
+    <#if model.protocol??>@DeriveIntegration(
+        <#if model.requestMappingFile?? && model.requestMappingFile != ''>requestMappingFile = "${model.requestMappingFile}",
+        </#if><#if model.responseMappingFile?? && model.responseMappingFile != ''>responseMappingFile = "${model.responseMappingFile}",
+        </#if><#if model.order?? && model.order != ''>order = ${model.order},
+        </#if><#if model.batchFlag?? && model.batchFlag>batchFlag = true,
+        </#if><#if model.ignoreIfParamAbsent?? && model.ignoreIfParamAbsent>ignoreIfParamAbsent = true,
+        </#if>protocolPath = "${model.protocol}"
+    )
+    </#if><#if model.batchEvent?? && model.batchEvent>@BatchProperty
+    </#if>private ${model.model} ${model.concept};
+    </#list>
+    </#if>
 }

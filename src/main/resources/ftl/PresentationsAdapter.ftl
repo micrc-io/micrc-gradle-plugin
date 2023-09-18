@@ -3,9 +3,12 @@ package ${basePackage}.infrastructure.persistence.${aggregationPackage};
 import io.micrc.core.annotations.integration.presentations.PresentationsAdapter;
 import org.springframework.stereotype.Component;
 
-@PresentationsAdapter(serviceName = "${logic}Service",<#if custom?? && custom != ''>custom = true,</#if>
-    <#if requestMappingFile?? && requestMappingFile != ''>requestMappingFile = "${requestMappingFile}",</#if><#if responseMappingFile?? && responseMappingFile != ''>responseMappingFile = "${responseMappingFile}",</#if>
-    protocolPath = "${protocolPath}"
+@PresentationsAdapter(
+    serviceName = "${logic}Service",
+    <#if custom?? && custom != ''>custom = true,
+    </#if><#if requestMappingFile?? && requestMappingFile != ''>requestMappingFile = "${requestMappingFile}",
+    </#if><#if responseMappingFile?? && responseMappingFile != ''>responseMappingFile = "${responseMappingFile}",
+    </#if>protocolPath = "${protocolPath}"
 )
 public interface ${logic}Adapter {
 

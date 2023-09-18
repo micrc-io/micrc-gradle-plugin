@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @MessageAdapter(
-        commandServicePath = "${basePackage}.application.businesses.${aggregationPackage}.${logic}Service",
-        eventName = "${event}"
+    commandServicePath = "${basePackage}.application.businesses.${aggregationPackage}.${logic}Service",
+    eventName = "${event}"
 )
 public interface ${event}${logic}Listener {
 

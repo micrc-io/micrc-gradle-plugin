@@ -168,6 +168,7 @@ public class ApplicationGenerationTask {
                         m.put("requestMappingFile", spliceMappingPath((String) JsonUtil.readPath(modeJson, "/requestMappingFile"), aggregationCode));
                         m.put("concept", JsonUtil.readPath(modeJson, "/concept"));
                         m.put("order", JsonUtil.readPath(modeJson, "/order"));
+                        m.put("ignoreIfParamAbsent", JsonUtil.readPath(modeJson, "/ignoreIfParamAbsent"));
                         m.put("batchEvent", JsonUtil.readPath(modeJson, "/batchEvent"));
                         m.put("batchFlag", JsonUtil.readPath(modeJson, "/batchFlag"));
                         return m;
@@ -287,6 +288,7 @@ public class ApplicationGenerationTask {
                         i.put("responseMappingFile", spliceMappingPath((String) JsonUtil.readPath(inteJson, "/responseMappingFile"), aggregationCode));
                         i.put("concept", JsonUtil.readPath(inteJson, "/concept"));
                         i.put("order", JsonUtil.readPath(inteJson, "/order"));
+                        i.put("ignoreIfParamAbsent", JsonUtil.readPath(inteJson, "/ignoreIfParamAbsent"));
                         return i;
                     }).collect(Collectors.toList());
                     map.put("integrations", integrationResult);

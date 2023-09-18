@@ -3,10 +3,12 @@ package ${basePackage}.infrastructure.derivate.${aggregationPackage};
 import io.micrc.core.annotations.integration.derivation.DerivationsAdapter;
 import org.springframework.stereotype.Component;
 
-@DerivationsAdapter(serviceName = "${logic}Service",<#if custom?? && custom != ''>custom = true,</#if>
-    <#if requestMappingFile?? && requestMappingFile != ''>requestMappingFile = "${requestMappingFile}",</#if>
-    <#if responseMappingFile?? && responseMappingFile != ''>responseMappingFile = "${responseMappingFile}",</#if>
-    protocolPath = "${protocolPath}"
+@DerivationsAdapter(
+    serviceName = "${logic}Service",
+    <#if custom?? && custom != ''>custom = true,
+    </#if><#if requestMappingFile?? && requestMappingFile != ''>requestMappingFile = "${requestMappingFile}",
+    </#if><#if responseMappingFile?? && responseMappingFile != ''>responseMappingFile = "${responseMappingFile}",
+    </#if>protocolPath = "${protocolPath}"
 )
 public interface ${logic}Adapter {
 

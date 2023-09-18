@@ -15,8 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 <#list queries as query>
         @QueryLogic(repositoryFullClassName = "${query.repository}",
                 paramMappingFile = {<#list query.paramMappingFiles as paramMappingFile>"${paramMappingFile}",</#list>},
-                methodName = "${query.method}", name = "${query.concept}"
-                <#if query.order?? && query.order != ''>, order = ${query.order}</#if>
+                methodName = "${query.method}",
+                name = "${query.concept}"<#if query.order?? && query.order != ''>,
+                order = ${query.order}</#if>
         ),
 </#list>
 </#if>
@@ -25,11 +26,11 @@ import org.springframework.transaction.annotation.Transactional;
 <#list specialTechnologies as sp>
         @SpecialTechnology(name = "${sp.name}",
                 paramMappingFile = "${sp.paramMappingFile}",
-                <#if sp.order?? && sp.order != ''>order = ${sp.order}, </#if>
-                <#if ge.variableMappingFile?? && ge.variableMappingFile != ''>variableMappingFile = "${ge.variableMappingFile}", </#if>
-                <#if sp.scriptContentPath?? && sp.scriptContentPath != ''>scriptContentPath = "${sp.scriptContentPath}", </#if>
-                <#if sp.scriptFilePath?? && sp.scriptFilePath != ''>scriptFilePath = "${sp.scriptFilePath}", </#if>
-                technologyType = TechnologyType.${sp.technologyType}
+                <#if sp.order?? && sp.order != ''>order = ${sp.order},
+                </#if><#if ge.variableMappingFile?? && ge.variableMappingFile != ''>variableMappingFile = "${ge.variableMappingFile}",
+                </#if><#if sp.scriptContentPath?? && sp.scriptContentPath != ''>scriptContentPath = "${sp.scriptContentPath}",
+                </#if><#if sp.scriptFilePath?? && sp.scriptFilePath != ''>scriptFilePath = "${sp.scriptFilePath}",
+                </#if>technologyType = TechnologyType.${sp.technologyType}
         ),
 </#list>
 </#if>
@@ -37,15 +38,17 @@ import org.springframework.transaction.annotation.Transactional;
 <#if generalTechnologies??>
 <#list generalTechnologies as ge>
         @GeneralTechnology(name = "${ge.name}",
-                <#if ge.order?? && ge.order != ''>order = ${ge.order}, </#if>
-                <#if ge.variableMappingFile?? && ge.variableMappingFile != ''>variableMappingFile = "${ge.variableMappingFile}", </#if>
-                <#if ge.routeContentPath?? && ge.routeContentPath != ''>routeContentPath = "${ge.routeContentPath}", </#if>
-                <#if ge.routeXmlFilePath?? && ge.routeXmlFilePath != ''>routeXmlFilePath = "${ge.routeXmlFilePath}", </#if>
-                paramMappingFile = "${ge.paramMappingFile}"
+                <#if ge.order?? && ge.order != ''>order = ${ge.order},
+                </#if><#if ge.variableMappingFile?? && ge.variableMappingFile != ''>variableMappingFile = "${ge.variableMappingFile}",
+                </#if><#if ge.routeContentPath?? && ge.routeContentPath != ''>routeContentPath = "${ge.routeContentPath}",
+                </#if><#if ge.routeXmlFilePath?? && ge.routeXmlFilePath != ''>routeXmlFilePath = "${ge.routeXmlFilePath}",
+                </#if>paramMappingFile = "${ge.paramMappingFile}"
         ),
 </#list>
 </#if>
-}<#if custom?? && custom != ''>, custom = true</#if>, assembler = "${assembler}")
+},
+assembler = "${assembler}"<#if custom?? && custom != ''>,
+custom = true</#if>)
 public interface ${logic}Service {
 
     String execute(String param);

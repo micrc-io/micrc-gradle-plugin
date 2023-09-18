@@ -23,9 +23,13 @@ public class ${modelName} implements Serializable {
 
 <#if properties??>
     <#list properties as property>
-    <#if property.dataType?? && property.dataType == 'identity'>@EmbeddedId</#if><#if property.dataType?? && property.dataType == 'json'>@Column(columnDefinition = "json")
-    @Type(type = "json")</#if><#if property.dataType?? && property.dataType == 'embedded'>@Embedded</#if><#if property.dataType?? && property.dataType == 'version'>@Version</#if><#if property.dataType?? && property.dataType == 'transient'>@Transient</#if>
-    private ${property.modelType} ${property.name}<#if property.dataType?? && property.dataType == 'identity'> = new ${property.modelType}()</#if>;
+    <#if property.dataType?? && property.dataType == 'identity'>@EmbeddedId
+    </#if><#if property.dataType?? && property.dataType == 'json'>@Column(columnDefinition = "json")
+    @Type(type = "json")
+    </#if><#if property.dataType?? && property.dataType == 'embedded'>@Embedded
+    </#if><#if property.dataType?? && property.dataType == 'version'>@Version
+    </#if><#if property.dataType?? && property.dataType == 'transient'>@Transient
+    </#if>private ${property.modelType} ${property.name}<#if property.dataType?? && property.dataType == 'identity'> = new ${property.modelType}()</#if>;
 <#if property.dataType?? && property.dataType == 'version'>    @PrePersist
     public void prePersist() {
         version = 0;

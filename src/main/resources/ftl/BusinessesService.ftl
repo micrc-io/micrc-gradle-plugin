@@ -14,13 +14,19 @@ import org.springframework.transaction.annotation.Transactional;
 @DomainEvents(events = {
 <#if events??>
 <#list events as event>
-        @Event(topicName = "${event.topic}", eventName = "${event.event}", mappings = {
-        <#if event.mappings??>
+    @Event(
+        topicName = "${event.topic}",
+        eventName = "${event.event}",
+        mappings = {
+    <#if event.mappings??>
         <#list event.mappings as mapping>
-                @EventMapping(mappingPath = "${mapping.mappingFile}", mappingKey = "${mapping.service}", receiverAddress = "${mapping.receiver}"),
+            @EventMapping(
+                mappingPath = "${mapping.mappingFile}",
+                mappingKey = "${mapping.service}",
+                receiverAddress = "${mapping.receiver}"),
         </#list>
-        </#if>
-        }),
+    </#if>
+    }),
 </#list>
 </#if>
 })
@@ -33,8 +39,8 @@ public interface ${logic}Service extends ApplicationBusinessesService<${logic}Co
     @Component("${logic}Service")
     public static class ${logic}ServiceImpl implements ${logic}Service {
 
-        <#if permission?? && permission != ''>@RequiresPermissions("${permission}")</#if>
-        @BusinessesExecution
+        <#if permission?? && permission != ''>@RequiresPermissions("${permission}")
+        </#if>@BusinessesExecution
         @Transactional
         @Override
         public void execute(${logic}Command command) {
