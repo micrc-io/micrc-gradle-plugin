@@ -11,25 +11,31 @@ import org.springframework.transaction.annotation.Transactional;
 @PresentationsService(queryLogics = {
 <#if queries??>
 <#list queries as query>
-        @QueryLogic(repositoryFullClassName = "${query.repository}", methodName = "${query.method}", name = "${query.concept}",
-                <#if query.order?? && query.order != ''>order = ${query.order}, </#if>
-                paramMappingFile = {<#list query.paramMappingFiles as paramMappingFile>"${paramMappingFile}",</#list>}
-        ),
+    @QueryLogic(
+        repositoryFullClassName = "${query.repository}",
+        methodName = "${query.method}",
+        name = "${query.concept}",
+        <#if query.order?? && query.order != ''>order = ${query.order},
+        </#if>paramMappingFile = {<#list query.paramMappingFiles as paramMappingFile>"${paramMappingFile}",</#list>}
+    ),
 </#list>
 </#if>
 }, integrations = {
 <#if integrations??>
 <#list integrations as integration>
-        @Integration(
-                <#if integration.requestMappingFile?? && integration.requestMappingFile != ''>requestMappingFile = "${integration.requestMappingFile}",
-                </#if><#if integration.responseMappingFile?? && integration.responseMappingFile != ''>responseMappingFile = "${integration.responseMappingFile}",
-                </#if><#if integration.order?? && integration.order != ''>order = ${integration.order},
-                </#if><#if integration.ignoreIfParamAbsent?? && integration.ignoreIfParamAbsent>ignoreIfParamAbsent = true,
-                </#if>protocol = "${integration.protocol}", name = "${integration.concept}"
-        ),
+    @Integration(
+        <#if integration.requestMappingFile?? && integration.requestMappingFile != ''>requestMappingFile = "${integration.requestMappingFile}",
+        </#if><#if integration.responseMappingFile?? && integration.responseMappingFile != ''>responseMappingFile = "${integration.responseMappingFile}",
+        </#if><#if integration.order?? && integration.order != ''>order = ${integration.order},
+        </#if><#if integration.ignoreIfParamAbsent?? && integration.ignoreIfParamAbsent>ignoreIfParamAbsent = true,
+        </#if>protocol = "${integration.protocol}",
+        name = "${integration.concept}"
+    ),
 </#list>
 </#if>
-}<#if custom?? && custom != ''>, custom = true</#if>, assembler = "${assembler}")
+}<#if custom?? && custom != ''>,
+custom = true</#if>,
+assembler = "${assembler}")
 public interface ${logic}Service {
 
     String execute(String param);
@@ -37,8 +43,8 @@ public interface ${logic}Service {
     @Component("${logic}Service")
     public static class ${logic}ServiceImpl implements ${logic}Service {
 
-        <#if permission?? && permission != ''>@RequiresPermissions("${permission}")</#if>
-        @PresentationsExecution
+        <#if permission?? && permission != ''>@RequiresPermissions("${permission}")
+        </#if>@PresentationsExecution
         @Transactional(readOnly = true)
         @Override
         public String execute(String param) {

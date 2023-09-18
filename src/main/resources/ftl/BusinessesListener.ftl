@@ -21,7 +21,7 @@ public interface ${event}${logic}Listener {
     class ${event}${logic}ListenerImpl implements ${event}${logic}Listener {
 
         @KafkaListener(
-                topics = {"${topic}"}, groupId = "${event}${logic}", autoStartup = "true", concurrency = "3"
+            topics = {"${topic}"}, groupId = "${event}${logic}", autoStartup = "true", concurrency = "3"
         )
         @Override
         @MessageExecution
