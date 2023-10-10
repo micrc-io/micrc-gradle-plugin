@@ -65,16 +65,20 @@ public class ManifestsGenerationTask {
         );
         middlewares.orElseThrow().keySet().forEach(middleware -> {
             boolean enabled =
-                    ((Map<String, Object>) middlewares.orElseThrow().get(middleware)).get("enabled").equals("true");
+                ((Map<String, Object>) middlewares.orElseThrow().get(middleware)).get("enabled").equals("true");
+            Optional<Map<String, Object>> profiles = Optional.ofNullable(
+                (Map<String, Object>) ((Map<String, Object>) middlewares.orElseThrow().get(middleware)).get("profiles")
+            );
             if (enabled) {
                 ctx.put(
                         middleware + "_provider",
                         (String) ((Map<String, Object>) middlewares.orElseThrow().get(middleware)).get("provider")
                 );
+                ctx.put(
+                        middleware + "_providers",
+                        String.join(",", profiles.orElseThrow().keySet())
+                );
             }
-            Optional<Map<String, Object>> profiles = Optional.ofNullable(
-                    (Map<String, Object>) ((Map<String, Object>) middlewares.orElseThrow().get(middleware)).get("profiles")
-            );
             middlewareBaseSnipsTemplateContext(ctx, buildDirPath, middleware, enabled);
             middlewareProfilesSnipsTemplateContext(ctx, profiles.orElseThrow(), buildDirPath, middleware, enabled);
         });
@@ -162,26 +166,37 @@ public class ManifestsGenerationTask {
     // 渲染中间件profiles snip模版，并将渲染后的字符串加入上下文中，用于主文件渲染
     @SuppressWarnings("unchecked")
     private void middlewareProfilesSnipsTemplateContext(
-            Map<String, String> ctx, Map<String, Object> profiles,
+            Map<String, String> ctx, Map<String, Object> providerProfiles,
             String buildDirPath, String middleware, boolean enabled) {
-        profiles.keySet().forEach(profileKey -> {
-            Map<String, String> profile = (Map<String, String>) profiles.get(profileKey);
-            if (!profile.keySet().isEmpty()) {
-                profile.keySet().forEach(
-                        prop -> ctx.put(middleware + "_" + prop + "_" + profileKey, profile.get(prop))
-                );
-                ctx.put(
-                        middleware + "_secret_sealed_" + profileKey,
-                        enabled ? TemplateUtils.generate(
-                                ctx,
-                                buildDirPath,
-                                List.of("tmpl", "manifest", "k8s", "kustomize", profileKey, "snips", middleware,
-                                        "secret-sealed.tmpl"),
-                                List.of()
-                        ) : ""
-                );
-            }
+        Map<String, String> profilesData = new HashMap<>();
+        providerProfiles.keySet().forEach(provider -> {
+            Map<String, Object> profiles = (Map<String, Object>) providerProfiles.get(provider);
+            profiles.keySet().forEach(profileKey -> {
+                profilesData.putIfAbsent(middleware + "_properties_" + profileKey, "");
+                Map<String, String> profile = (Map<String, String>) profiles.get(profileKey);
+                if (!profile.keySet().isEmpty()) {
+                    profile.keySet().forEach(prop -> {
+                        String profileData = profilesData.get(profileKey);
+                        profileData += "\n    ";
+                        profileData += provider + "-" + middleware + "-" + prop + ": " + profile.get(prop);
+                        profilesData.put(profileKey, profileData);
+                    });
+                }
+            });
         });
+        ctx.putAll(profilesData);
+        profilesData.keySet().forEach(profileKey ->
+            ctx.put(
+                middleware + "_secret_sealed_" + profileKey,
+                enabled ? TemplateUtils.generate(
+                    ctx,
+                    buildDirPath,
+                    List.of("tmpl", "manifest", "k8s", "kustomize", profileKey, "snips", middleware,
+                            "secret-sealed.tmpl"),
+                    List.of()
+                ) : ""
+            )
+        );
     }
 
     // 渲染中间件base snip模版，并将渲染后的字符串加入上下文中，用于主文件渲染

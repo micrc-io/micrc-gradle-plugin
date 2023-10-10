@@ -4,20 +4,28 @@
             - sh
             - -c
             - |
-              until redis-cli -a \$CACHE_PASSWORD -h \$CACHE_HOST -p \$CACHE_PORT --no-auth-warning ping; do echo waiting for cache; sleep 2; done;
+              providers=\${CACHE_PROVIDERS//,/ };
+              for provider in \${providers[@]};
+              do
+                CACHE_PASSWORD_KEY="$provider"-"$CACHE_PASSWORD_KEY_SUFFIX"
+                CACHE_PASSWORD=${!CACHE_PASSWORD_KEY}
+                CACHE_HOST_KEY="$provider"-"$CACHE_HOST_KEY_SUFFIX"
+                CACHE_HOST=${!CACHE_HOST_KEY}
+                CACHE_PORT_KEY="$provider"-"$CACHE_PORT_KEY_SUFFIX"
+                CACHE_PORT=${!CACHE_PORT_KEY}
+
+                if [ $CACHE_HOST ] && [ $CACHE_PORT ] && [ $CACHE_PASSWORD ]; then
+                  until redis-cli -a \$CACHE_PASSWORD -h \$CACHE_HOST -p \$CACHE_PORT --no-auth-warning ping; do echo waiting for cache; sleep 2; done;
+                fi
+              done;
+          envFrom:
+            - secretRef: {{ .Values.cache.cacheSecret }}
           env:
-            - name: CACHE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.cache.cacheSecret }}
-                  key: {{ .Values.cache.cachePasswordKey }}
-            - name: CACHE_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.cache.cacheSecret }}
-                  key: {{ .Values.cache.cacheHostKey }}
-            - name: CACHE_PORT
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.cache.cacheSecret }}
-                  key: {{ .Values.cache.cachePortKey }}
+            - name: CACHE_PROVIDERS
+              value: {{ .Values.cache.cacheProviders }}
+            - name: CACHE_PASSWORD_KEY_SUFFIX
+              value: {{ .Values.cache.cachePasswordKeySuffix }}
+            - name: CACHE_HOST_KEY_SUFFIX
+              value: {{ .Values.cache.cacheHostKeySuffix }}
+            - name: CACHE_PORT_KEY_SUFFIX
+              value: {{ .Values.cache.cachePortKeySuffix }}

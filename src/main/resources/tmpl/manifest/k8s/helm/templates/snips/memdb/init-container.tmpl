@@ -4,20 +4,28 @@
             - sh
             - -c
             - |
-              until redis-cli -a \$MEMDB_PASSWORD -h \$MEMDB_HOST -p \$MEMDB_PORT --no-auth-warning ping; do echo waiting for memdb; sleep 2; done;
+              providers=\${MEMDB_PROVIDERS//,/ };
+              for provider in \${providers[@]};
+              do
+                MEMDB_HOST_KEY="$provider"-"$MEMDB_HOST_KEY_SUFFIX"
+                MEMDB_HOST=${!MEMDB_HOST_KEY}
+                MEMDB_PORT_KEY="$provider"-"$MEMDB_PORT_KEY_SUFFIX"
+                MEMDB_PORT=${!MEMDB_PORT_KEY}
+                MEMDB_PASSWORD_KEY="$provider"-"$MEMDB_PASSWORD_KEY_SUFFIX"
+                MEMDB_PASSWORD=${!MEMDB_PASSWORD_KEY}
+
+                if [ $MEMDB_HOST ] && [ $MEMDB_PORT ] && [ $MEMDB_PASSWORD ]; then
+                  until redis-cli -a \$MEMDB_PASSWORD -h \$MEMDB_HOST -p \$MEMDB_PORT --no-auth-warning ping; do echo waiting for memdb; sleep 2; done;
+                fi
+              done;
+          envFrom:
+            - secretRef: {{ .Values.memdb.memdbSecret }}
           env:
-            - name: MEMDB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.memdb.memdbSecret }}
-                  key: {{ .Values.memdb.memdbPasswordKey }}
-            - name: MEMDB_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.memdb.memdbSecret }}
-                  key: {{ .Values.memdb.memdbHostKey }}
-            - name: MEMDB_PORT
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.memdb.memdbSecret }}
-                  key: {{ .Values.memdb.memdbPortKey }}
+            - name: MEMDB_PROVIDERS
+              value: {{ .Values.memdb.memdbProviders }}
+            - name: MEMDB_PASSWORD_KEY_SUFFIX
+              value: {{ .Values.memdb.memdbPasswordKeySuffix }}
+            - name: MEMDB_HOST_KEY_SUFFIX
+              value: {{ .Values.memdb.memdbHostKeySuffix }}
+            - name: MEMDB_PORT_KEY_SUFFIX
+              value: {{ .Values.memdb.memdbPortKeySuffix }}
