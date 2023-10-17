@@ -285,6 +285,10 @@ public class DomainGenerationTask {
                 );
                 return;
             }
+            // 初始化DMN目录
+            Path dmnPath = Paths.get(project.getProjectDir().getParent(),
+                    project.getName().replace("-service", "-logic"), "src", "main", "resources", "dmn");
+            TemplateUtils.clearDir(dmnPath);
             TemplateUtils.listFile(aggregationsPath).forEach(currentAggregations -> {
                 // 复制changeset文件到resource/db
                 Path dbFilePath = Paths.get(currentAggregations.toString(), "db.yaml");
@@ -300,9 +304,6 @@ public class DomainGenerationTask {
                 if (!businessesRulePath.toFile().exists()) {
                     return;
                 }
-                Path dmnPath = Paths.get(project.getProjectDir().getParent(),
-                        project.getName().replace("-service", "-logic"), "src", "main", "resources", "dmn");
-                TemplateUtils.clearDir(dmnPath);
                 TemplateUtils.listFile(businessesRulePath).forEach(dmnFilePath -> {
                     if (!dmnFilePath.getFileName().toString().endsWith("dmn")) {
                         return;

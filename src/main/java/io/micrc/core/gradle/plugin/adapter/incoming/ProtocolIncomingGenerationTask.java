@@ -83,7 +83,7 @@ public class ProtocolIncomingGenerationTask {
                 if (portType == null || "ADAPTER".equals(portType)) {
                     Map.Entry<String, PathItem> next = openAPI.getPaths().entrySet().iterator().next();
                     Map<String, Object> pathExtensions = next.getValue().getExtensions();
-                    if (pathExtensions != null) {
+                    if (pathExtensions != null && pathExtensions.get("x-adapter") != null) {
                         Object adapter = pathExtensions.get("x-adapter");
                         JsonNode adapterNode = JsonUtil.readTree(adapter);
                         // custom
@@ -185,7 +185,7 @@ public class ProtocolIncomingGenerationTask {
                 }
                 Map.Entry<String, PathItem> next = openAPI.getPaths().entrySet().iterator().next();
                 Map<String, Object> pathExtensions = next.getValue().getExtensions();
-                if (pathExtensions != null) {
+                if (pathExtensions != null && pathExtensions.get("x-adapter") != null) {
                     Object adapter = pathExtensions.get("x-adapter");
                     JsonNode adapterNode = JsonUtil.readTree(adapter);
                     // custom
@@ -241,7 +241,7 @@ public class ProtocolIncomingGenerationTask {
                 }
                 Map.Entry<String, PathItem> next = openAPI.getPaths().entrySet().iterator().next();
                 Map<String, Object> pathExtensions = next.getValue().getExtensions();
-                if (pathExtensions != null) {
+                if (pathExtensions != null && pathExtensions.get("x-adapter") != null) {
                     Object adapter = pathExtensions.get("x-adapter");
                     JsonNode adapterNode = JsonUtil.readTree(adapter);
                     // custom

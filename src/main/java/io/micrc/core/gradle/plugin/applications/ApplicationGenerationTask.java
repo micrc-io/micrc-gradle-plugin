@@ -112,7 +112,7 @@ public class ApplicationGenerationTask {
                 map.put("events", eventResult);
                 Info info = openAPI.getInfo();
                 Map<String, Object> infoExtensions = info.getExtensions();
-                if (infoExtensions != null) {
+                if (infoExtensions != null && infoExtensions.get("x-service") != null) {
                     Object service = infoExtensions.get("x-service");
                     JsonNode servicveNode = JsonUtil.readTree(service);
                     // permission
@@ -309,7 +309,7 @@ public class ApplicationGenerationTask {
                 JsonNode metadataNode = JsonUtil.readTree(metadata);
                 Info info = openAPI.getInfo();
                 Map<String, Object> infoExtensions = info.getExtensions();
-                if (infoExtensions != null) {
+                if (infoExtensions != null && infoExtensions.get("x-service") != null) {
                     Object service = infoExtensions.get("x-service");
                     JsonNode servicveNode = JsonUtil.readTree(service);
                     // permission
@@ -410,7 +410,7 @@ public class ApplicationGenerationTask {
                 JsonNode metadataNode = JsonUtil.readTree(metadata);
                 Info info = openAPI.getInfo();
                 Map<String, Object> infoExtensions = info.getExtensions();
-                if (infoExtensions != null) {
+                if (infoExtensions != null && infoExtensions.get("x-service") != null) {
                     Object service = infoExtensions.get("x-service");
                     JsonNode servicveNode = JsonUtil.readTree(service);
                     // permission
