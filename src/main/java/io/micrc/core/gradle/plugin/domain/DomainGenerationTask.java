@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DomainGenerationTask {
     public static final Map<String, String> AGGREGATION_NAME_MAP = new HashMap<>();
+    public static final Map<String, Map<String, Schema>> AGGREGATION_SCHEMAS_MAP = new HashMap<>();
     private static final String SRC_MAIN_RESOURCES = File.separator + "src" + File.separator + "main" + File.separator + "resources";
     private static final String SRC_MAIN_RESOURCES_AGGREGATIONS = SRC_MAIN_RESOURCES + File.separator + "aggregations";
     private static final String SRC_MAIN_RESOURCES_CASES = SRC_MAIN_RESOURCES + File.separator + "cases";
@@ -81,6 +82,7 @@ public class DomainGenerationTask {
                 return;
             }
             AGGREGATION_NAME_MAP.put(path.toFile().getName(), aggregationName);
+            AGGREGATION_SCHEMAS_MAP.put(path.toFile().getName(), allSchemas);
             String aggregationPackage = aggregationName.toLowerCase();
             map.put("aggregationPackage", aggregationPackage);
             String fileNamePrefix = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
@@ -275,7 +277,6 @@ public class DomainGenerationTask {
             TemplateUtils.clearDir(Path.of(resourceCasePath));
             String schemaCasePath = project.getBuildDir().getAbsolutePath() + MICRC_SCHEMA_CASES;
             project.copy(copySpec -> copySpec.from(schemaCasePath).into(resourceCasePath));
-            // 再复制changeset文件到resource/db
             Path aggregationsPath = Paths.get(project.getBuildDir() + MICRC_SCHEMA_AGGREGATIONS);
             if (!Files.exists(aggregationsPath)) {
                 log.warn("Unable to find aggregation path: "
@@ -284,15 +285,31 @@ public class DomainGenerationTask {
                 );
                 return;
             }
-            TemplateUtils.listFile(aggregationsPath).forEach(path -> {
-                Path dbFilePath = Paths.get(path.toString(), "db.yaml");
+            TemplateUtils.listFile(aggregationsPath).forEach(currentAggregations -> {
+                // 复制changeset文件到resource/db
+                Path dbFilePath = Paths.get(currentAggregations.toString(), "db.yaml");
                 if (!dbFilePath.toFile().exists()) {
                     return;
                 }
                 String resourceDbPath = project.getProjectDir().getAbsolutePath()
                         + SRC_MAIN_RESOURCES_DB_CHANGELOG + File.separator
-                        + project.getVersion() + File.separator + path.getFileName();
+                        + project.getVersion() + File.separator + currentAggregations.getFileName();
                 project.copy(copySpec -> copySpec.from(dbFilePath).into(resourceDbPath));
+                // 复制dmn文件到xxx-logic下
+                Path businessesRulePath = Paths.get(currentAggregations.toString(), "rule", "businesses");
+                if (!businessesRulePath.toFile().exists()) {
+                    return;
+                }
+                Path dmnPath = Paths.get(project.getProjectDir().getParent(),
+                        project.getName().replace("-service", "-logic"), "src", "main", "resources", "dmn");
+                TemplateUtils.clearDir(dmnPath);
+                TemplateUtils.listFile(businessesRulePath).forEach(dmnFilePath -> {
+                    if (!dmnFilePath.getFileName().toString().endsWith("dmn")) {
+                        return;
+                    }
+                    Path logicResourceDmnPath = Paths.get(dmnPath.toString(), currentAggregations.getFileName().toString());
+                    project.copy(copySpec -> copySpec.from(dmnFilePath).into(logicResourceDmnPath));
+                });
             });
             log.info("model schema file copy complete. ");
         } catch (Exception e) {

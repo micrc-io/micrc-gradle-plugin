@@ -9,6 +9,7 @@ import io.micrc.core.gradle.plugin.lib.SwaggerUtil;
 import io.micrc.core.gradle.plugin.lib.TemplateUtils;
 import io.micrc.core.gradle.plugin.project.SchemaSynchronizeConfigure;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
 import lombok.extern.slf4j.Slf4j;
 import org.gradle.api.Project;
 
@@ -80,11 +81,18 @@ public class ProtocolIncomingGenerationTask {
                 JsonNode metadataNode = JsonUtil.readTree(metadata);
                 String portType = metadataNode.at("/portType").textValue();
                 if (portType == null || "ADAPTER".equals(portType)) {
+                    Map.Entry<String, PathItem> next = openAPI.getPaths().entrySet().iterator().next();
+                    Map<String, Object> pathExtensions = next.getValue().getExtensions();
+                    if (pathExtensions == null) {
+                        return;
+                    }
+                    Object adapter = pathExtensions.get("x-adapter");
+                    JsonNode adapterNode = JsonUtil.readTree(adapter);
                     // custom
-                    map.put("custom", metadataNode.at("/customAdapter").textValue());
+                    map.put("custom", adapterNode.at("/customContent").textValue());
                     // mapping
-                    map.put("requestMappingFile", spliceMappingPath(metadataNode.at("/requestMappingFile").textValue(), aggregationCode));
-                    map.put("responseMappingFile", spliceMappingPath(metadataNode.at("/responseMappingFile").textValue(), aggregationCode));
+                    map.put("requestMappingFile", spliceMappingPath(adapterNode.at("/requestMappingFile").textValue(), aggregationCode));
+                    map.put("responseMappingFile", spliceMappingPath(adapterNode.at("/responseMappingFile").textValue(), aggregationCode));
                     map.put("rootEntityName", aggregationName);
                     String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                             + basePackage.replace(".", "/") + "/infrastructure/command/"
@@ -106,7 +114,7 @@ public class ProtocolIncomingGenerationTask {
                     });
                 } else if ("SCHEDULE".equals(portType)) {
                     // cron
-                    String cron = metadataNode.at("/cron").textValue();
+                    String cron = metadataNode.at("/schedule/cron").textValue();
                     map.put("cron", cron);
                     String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                             + basePackage.replace(".", "/") + "/infrastructure/schedule/"
@@ -114,9 +122,9 @@ public class ProtocolIncomingGenerationTask {
                     FreemarkerUtil.generator("BusinessesSchedule", map, fileName);
                 } else if ("RUNNER".equals(portType)) {
                     // dataPath
-                    map.put("dataPath", metadataNode.at("/dataPath").textValue());
+                    map.put("dataPath", split[1].replace("/api/", "/runner/"));
                     // runnerOrder
-                    map.put("runnerOrder", metadataNode.at("/runnerOrder").textValue());
+                    map.put("runnerOrder", metadataNode.at("/runner/runnerOrder").textValue());
                     String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                             + basePackage.replace(".", "/") + "/infrastructure/runner/"
                             + aggregationPackage + "/" + logic + "Runner.java";
@@ -176,13 +184,18 @@ public class ProtocolIncomingGenerationTask {
                 if (extensions == null) {
                     return;
                 }
-                Object metadata = extensions.get("x-metadata");
-                JsonNode metadataNode = JsonUtil.readTree(metadata);
+                Map.Entry<String, PathItem> next = openAPI.getPaths().entrySet().iterator().next();
+                Map<String, Object> pathExtensions = next.getValue().getExtensions();
+                if (pathExtensions == null) {
+                    return;
+                }
+                Object adapter = pathExtensions.get("x-adapter");
+                JsonNode adapterNode = JsonUtil.readTree(adapter);
                 // custom
-                map.put("custom", metadataNode.at("/customAdapter").textValue());
+                map.put("custom", adapterNode.at("/customContent").textValue());
                 // mapping
-                map.put("requestMappingFile", spliceMappingPath(metadataNode.at("/requestMappingFile").textValue(), aggregationCode));
-                map.put("responseMappingFile", spliceMappingPath(metadataNode.at("/responseMappingFile").textValue(), aggregationCode));
+                map.put("requestMappingFile", spliceMappingPath(adapterNode.at("/requestMappingFile").textValue(), aggregationCode));
+                map.put("responseMappingFile", spliceMappingPath(adapterNode.at("/responseMappingFile").textValue(), aggregationCode));
                 String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                         + basePackage.replace(".", "/") + "/infrastructure/persistence/"
                         + aggregationPackage + "/" + logic + "Adapter.java";
@@ -228,13 +241,18 @@ public class ProtocolIncomingGenerationTask {
                 if (extensions == null) {
                     return;
                 }
-                Object metadata = extensions.get("x-metadata");
-                JsonNode metadataNode = JsonUtil.readTree(metadata);
+                Map.Entry<String, PathItem> next = openAPI.getPaths().entrySet().iterator().next();
+                Map<String, Object> pathExtensions = next.getValue().getExtensions();
+                if (pathExtensions == null) {
+                    return;
+                }
+                Object adapter = pathExtensions.get("x-adapter");
+                JsonNode adapterNode = JsonUtil.readTree(adapter);
                 // custom
-                map.put("custom", metadataNode.at("/customAdapter").textValue());
+                map.put("custom", adapterNode.at("/customContent").textValue());
                 // mapping
-                map.put("requestMappingFile", spliceMappingPath(metadataNode.at("/requestMappingFile").textValue(), aggregationCode));
-                map.put("responseMappingFile", spliceMappingPath(metadataNode.at("/responseMappingFile").textValue(), aggregationCode));
+                map.put("requestMappingFile", spliceMappingPath(adapterNode.at("/requestMappingFile").textValue(), aggregationCode));
+                map.put("responseMappingFile", spliceMappingPath(adapterNode.at("/responseMappingFile").textValue(), aggregationCode));
                 String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                         + basePackage.replace(".", "/") + "/infrastructure/derivate/"
                         + aggregationPackage + "/" + logic + "Adapter.java";

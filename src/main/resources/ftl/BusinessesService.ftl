@@ -44,7 +44,7 @@ public interface ${logic}Service extends ApplicationBusinessesService<${logic}Co
         @Transactional
         @Override
         public void execute(${logic}Command command) {
-            ${custom}
+            <#if custom?? && custom != ''>${custom}<#else></#if>
         }
     }
 }

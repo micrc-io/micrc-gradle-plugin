@@ -61,7 +61,7 @@ public class ${logic}Command {
         </#if>protocolPath = "${model.protocol}"
     )
     </#if><#if model.batchEvent?? && model.batchEvent>@BatchProperty
-    </#if>private ${model.model} ${model.concept};
+    </#if>private ${model.modelType} ${model.concept};
     </#list>
     </#if>
 }

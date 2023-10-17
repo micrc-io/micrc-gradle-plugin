@@ -10,6 +10,8 @@ import io.micrc.core.gradle.plugin.lib.SwaggerUtil;
 import io.micrc.core.gradle.plugin.lib.TemplateUtils;
 import io.micrc.core.gradle.plugin.project.SchemaSynchronizeConfigure;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.Schema;
 import lombok.extern.slf4j.Slf4j;
 import org.gradle.api.Project;
 
@@ -18,7 +20,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -109,10 +110,17 @@ public class ApplicationGenerationTask {
                     return e;
                 }).filter(Objects::nonNull).collect(Collectors.toList());
                 map.put("events", eventResult);
+                Info info = openAPI.getInfo();
+                Map<String, Object> infoExtensions = info.getExtensions();
+                if (infoExtensions == null) {
+                    return;
+                }
+                Object service = infoExtensions.get("x-service");
+                JsonNode servicveNode = JsonUtil.readTree(service);
                 // permission
-                map.put("permission", metadataNode.at("/permission").textValue());
+                map.put("permission", servicveNode.at("/permission").textValue());
                 // custom
-                map.put("custom", metadataNode.at("/customService").textValue());
+                map.put("custom", servicveNode.at("/customContent").textValue());
                 String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                         + basePackage.replace(".", "/") + "/application/businesses/"
                         + aggregationPackage + "/" + logic + "Service.java";
@@ -156,13 +164,11 @@ public class ApplicationGenerationTask {
                 map.put("repositoryOrder", JsonUtil.readPath(commJson, "/repositoryOrder"));
                 List<Object> models = (List) JsonUtil.readPath(commJson, "/models");
                 if (models != null) {
-                    HashSet<Object> valobjs = new HashSet<>();
                     List<Object> modelResult = models.stream().map(mode -> {
                         String modeJson = JsonUtil.writeValueAsString(mode);
                         HashMap<String, Object> m = new HashMap<>();
                         Object model = JsonUtil.readPath(modeJson, "/model");
-                        valobjs.add(model);
-                        m.put("model", model);
+                        m.put("modelType", mapSchema2JavaType(model.toString(), DomainGenerationTask.AGGREGATION_SCHEMAS_MAP.get(aggregationCode)));
                         m.put("protocol", spliceIntegrationProtocolPath((String) JsonUtil.readPath(modeJson, "/protocol"), caseCode));
                         m.put("responseMappingFile", spliceMappingPath((String) JsonUtil.readPath(modeJson, "/responseMappingFile"), aggregationCode));
                         m.put("requestMappingFile", spliceMappingPath((String) JsonUtil.readPath(modeJson, "/requestMappingFile"), aggregationCode));
@@ -173,7 +179,6 @@ public class ApplicationGenerationTask {
                         m.put("batchFlag", JsonUtil.readPath(modeJson, "/batchFlag"));
                         return m;
                     }).collect(Collectors.toList());
-                    map.put("valobjs", valobjs);
                     map.put("models", modelResult);
                 }
                 fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
@@ -182,6 +187,56 @@ public class ApplicationGenerationTask {
                 FreemarkerUtil.generator("Command", map, fileName);
             });
         });
+    }
+    private String mapSchema2JavaType(String refPropertyName, Map<String, Schema> allSchemas) {
+        String modelType;
+        Schema refProperty = allSchemas.get(refPropertyName);
+        if ("array".equals(refProperty.getType())) {
+            String itemsRefString = JsonUtil.readTree(refProperty).at("/items").toString();
+            Object item$ref = JsonUtil.readPath(itemsRefString, "/$ref");
+            String itemTypeName;
+            if (item$ref == null) {
+                String type = (String) JsonUtil.readPath(itemsRefString, "/type");
+                String format = (String) JsonUtil.readPath(itemsRefString, "/format");
+                itemTypeName = mapJsonType2JavaType(type, format);
+            } else {
+                itemTypeName = splitRefName((String) item$ref);
+                itemTypeName = mapSchema2JavaType(itemTypeName, allSchemas);
+            }
+            modelType = "List<" + itemTypeName + ">";
+        } else if ("object".equals(refProperty.getType())) {
+            modelType = refPropertyName;
+        } else {
+            modelType = mapJsonType2JavaType(refProperty.getType(), refProperty.getFormat());
+        }
+        return modelType;
+    }
+
+    private static String splitRefName(String $ref) {
+        String[] split = $ref.split("/");
+        return split[split.length - 1];
+    }
+
+    private String mapJsonType2JavaType(String jsonType, String format) {
+        if ("object".equals(jsonType)) {
+            return "Object";
+        } else if ("string".equals(jsonType)) {
+            return "String";
+        } else if ("integer".equals(jsonType)) {
+            if ("int64".equals(format)) {
+                return "Long";
+            } else {
+                return "Integer";
+            }
+        } else if ("number".equals(jsonType)) {
+            return "Double";
+        } else if ("boolean".equals(jsonType)) {
+            return "Boolean";
+        } else if ("array".equals(jsonType)) {
+            return "List";
+        } else {
+            return null;
+        }
     }
 
     private String spliceMappingPath(String fileName, String aggregationCode) {
@@ -253,12 +308,19 @@ public class ApplicationGenerationTask {
                 }
                 Object metadata = extensions.get("x-metadata");
                 JsonNode metadataNode = JsonUtil.readTree(metadata);
+                Info info = openAPI.getInfo();
+                Map<String, Object> infoExtensions = info.getExtensions();
+                if (infoExtensions == null) {
+                    return;
+                }
+                Object service = infoExtensions.get("x-service");
+                JsonNode servicveNode = JsonUtil.readTree(service);
                 // permission
-                map.put("permission", metadataNode.at("/permission").textValue());
+                map.put("permission", servicveNode.at("/permission").textValue());
                 // custom
-                map.put("custom", metadataNode.at("/customService").textValue());
+                map.put("custom", servicveNode.at("/customContent").textValue());
                 // assembler
-                map.put("assembler", spliceMappingPath(metadataNode.at("/assembler").textValue(), aggregationCode));
+                map.put("assembler", spliceMappingPath(servicveNode.at("/assembler").textValue(), aggregationCode));
                 List<Object> queries = JsonUtil.writeValueAsList(metadataNode.at("/queries").toString(), Object.class);
                 if (queries != null) {
                     List<Object> queriesResult = queries.stream().map(quer -> {
@@ -345,12 +407,19 @@ public class ApplicationGenerationTask {
                 }
                 Object metadata = extensions.get("x-metadata");
                 JsonNode metadataNode = JsonUtil.readTree(metadata);
+                Info info = openAPI.getInfo();
+                Map<String, Object> infoExtensions = info.getExtensions();
+                if (infoExtensions == null) {
+                    return;
+                }
+                Object service = infoExtensions.get("x-service");
+                JsonNode servicveNode = JsonUtil.readTree(service);
                 // permission
-                map.put("permission", metadataNode.at("/permission").textValue());
+                map.put("permission", servicveNode.at("/permission").textValue());
                 // custom
-                map.put("custom", metadataNode.at("/customService").textValue());
+                map.put("custom", servicveNode.at("/customContent").textValue());
                 // assembler
-                map.put("assembler", spliceMappingPath(metadataNode.at("/assembler").textValue(), aggregationCode));
+                map.put("assembler", spliceMappingPath(servicveNode.at("/assembler").textValue(), aggregationCode));
                 List<Object> queries = JsonUtil.writeValueAsList(metadataNode.at("/queries").toString(), Object.class);
                 if (queries != null) {
                     List<Object> queriesResult = queries.stream().map(quer -> {
