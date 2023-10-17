@@ -7,14 +7,14 @@
               providers=\${MEMDB_PROVIDERS//,/ };
               for provider in \${providers[@]};
               do
-                MEMDB_HOST_KEY="$provider"-"$MEMDB_HOST_KEY_SUFFIX"
-                MEMDB_HOST=${!MEMDB_HOST_KEY}
-                MEMDB_PORT_KEY="$provider"-"$MEMDB_PORT_KEY_SUFFIX"
-                MEMDB_PORT=${!MEMDB_PORT_KEY}
-                MEMDB_PASSWORD_KEY="$provider"-"$MEMDB_PASSWORD_KEY_SUFFIX"
-                MEMDB_PASSWORD=${!MEMDB_PASSWORD_KEY}
+                MEMDB_HOST_KEY="\$provider"-"\$MEMDB_HOST_KEY_SUFFIX"
+                MEMDB_HOST=\${!MEMDB_HOST_KEY}
+                MEMDB_PORT_KEY="\$provider"-"\$MEMDB_PORT_KEY_SUFFIX"
+                MEMDB_PORT=\${!MEMDB_PORT_KEY}
+                MEMDB_PASSWORD_KEY="\$provider"-"\$MEMDB_PASSWORD_KEY_SUFFIX"
+                MEMDB_PASSWORD=\${!MEMDB_PASSWORD_KEY}
 
-                if [ $MEMDB_HOST ] && [ $MEMDB_PORT ] && [ $MEMDB_PASSWORD ]; then
+                if [ \$MEMDB_HOST ] && [ \$MEMDB_PORT ] && [ \$MEMDB_PASSWORD ]; then
                   until redis-cli -a \$MEMDB_PASSWORD -h \$MEMDB_HOST -p \$MEMDB_PORT --no-auth-warning ping; do echo waiting for memdb; sleep 2; done;
                 fi
               done;

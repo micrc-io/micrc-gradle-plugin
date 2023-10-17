@@ -7,18 +7,18 @@
               providers=\${DATABASE_PROVIDERS//,/ };
               for provider in \${providers[@]};
               do
-                DATABASE_HOST_KEY="$provider"-"$DATABASE_HOST_KEY_SUFFIX"
-                DATABASE_HOST=${!DATABASE_HOST_KEY}
-                DATABASE_PORT_KEY="$provider"-"$DATABASE_PORT_KEY_SUFFIX"
-                DATABASE_PORT=${!DATABASE_PORT_KEY}
-                DATABASE_NAME_KEY="$provider"-"$DATABASE_NAME_KEY_SUFFIX"
-                DATABASE_NAME=${!DATABASE_NAME_KEY}
-                DATABASE_USER_KEY="$provider"-"$DATABASE_USER_KEY_SUFFIX"
-                DATABASE_USER=${!DATABASE_USER_KEY}
-                DATABASE_PASSWORD_KEY="$provider"-"$DATABASE_PASSWORD_KEY_SUFFIX"
-                DATABASE_PASSWORD=${!DATABASE_PASSWORD_KEY}
+                DATABASE_HOST_KEY="\$provider"-"\$DATABASE_HOST_KEY_SUFFIX"
+                DATABASE_HOST=\${!DATABASE_HOST_KEY}
+                DATABASE_PORT_KEY="\$provider"-"\$DATABASE_PORT_KEY_SUFFIX"
+                DATABASE_PORT=\${!DATABASE_PORT_KEY}
+                DATABASE_NAME_KEY="\$provider"-"\$DATABASE_NAME_KEY_SUFFIX"
+                DATABASE_NAME=\${!DATABASE_NAME_KEY}
+                DATABASE_USER_KEY="\$provider"-"\$DATABASE_USER_KEY_SUFFIX"
+                DATABASE_USER=\${!DATABASE_USER_KEY}
+                DATABASE_PASSWORD_KEY="\$provider"-"\$DATABASE_PASSWORD_KEY_SUFFIX"
+                DATABASE_PASSWORD=\${!DATABASE_PASSWORD_KEY}
 
-                if [ $DATABASE_HOST ] && [ $DATABASE_PORT ] && [ $DATABASE_NAME ] && [ $DATABASE_USER ] && [ $DATABASE_PASSWORD ]; then
+                if [ \$DATABASE_HOST ] && [ \$DATABASE_PORT ] && [ \$DATABASE_NAME ] && [ \$DATABASE_USER ] && [ \$DATABASE_PASSWORD ]; then
                   until mysql -u\$DATABASE_USER -p\$DATABASE_PASSWORD -h\$DATABASE_HOST -P\$DATABASE_PORT -e "select version();"; do echo waiting for database and user: \$DATABASE_USER creation; sleep 5; done;
                   until mysql -u\$DATABASE_USER -p\$DATABASE_PASSWORD -h\$DATABASE_HOST -P\$DATABASE_PORT -e "use \$DATABASE_NAME;"; do echo waiting for database: \$DATABASE_NAME creation; sleep 5; done;
                 fi

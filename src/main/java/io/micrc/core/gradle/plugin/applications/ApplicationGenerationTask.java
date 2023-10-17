@@ -318,6 +318,9 @@ public class ApplicationGenerationTask {
                     map.put("custom", servicveNode.at("/customContent").textValue());
                     // assembler
                     map.put("assembler", spliceMappingPath(servicveNode.at("/assembler").textValue(), aggregationCode));
+                } else {
+                    // assembler
+                    map.put("assembler", spliceMappingPath(metadataNode.at("/assembler").textValue(), aggregationCode));
                 }
                 List<Object> queries = JsonUtil.writeValueAsList(metadataNode.at("/queries").toString(), Object.class);
                 if (queries != null) {
@@ -416,6 +419,9 @@ public class ApplicationGenerationTask {
                     map.put("custom", servicveNode.at("/customContent").textValue());
                     // assembler
                     map.put("assembler", spliceMappingPath(servicveNode.at("/assembler").textValue(), aggregationCode));
+                } else {
+                    // assembler
+                    map.put("assembler", spliceMappingPath(metadataNode.at("/assembler").textValue(), aggregationCode));
                 }
                 List<Object> queries = JsonUtil.writeValueAsList(metadataNode.at("/queries").toString(), Object.class);
                 if (queries != null) {

@@ -8,10 +8,7 @@ import org.gradle.api.Project;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 public class ManifestsGenerationTask {
@@ -169,23 +166,26 @@ public class ManifestsGenerationTask {
             Map<String, String> ctx, Map<String, Object> providerProfiles,
             String buildDirPath, String middleware, boolean enabled) {
         Map<String, String> profilesData = new HashMap<>();
+        HashSet<String> profileSet = new HashSet<>();
         providerProfiles.keySet().forEach(provider -> {
             Map<String, Object> profiles = (Map<String, Object>) providerProfiles.get(provider);
             profiles.keySet().forEach(profileKey -> {
-                profilesData.putIfAbsent(middleware + "_properties_" + profileKey, "");
+                String profilePropertiesKey = middleware + "_properties_" + profileKey;
+                profilesData.putIfAbsent(profilePropertiesKey, "");
                 Map<String, String> profile = (Map<String, String>) profiles.get(profileKey);
                 if (!profile.keySet().isEmpty()) {
                     profile.keySet().forEach(prop -> {
-                        String profileData = profilesData.get(profileKey);
+                        String profileData = profilesData.get(profilePropertiesKey);
                         profileData += "\n    ";
                         profileData += provider + "-" + middleware + "-" + prop + ": " + profile.get(prop);
-                        profilesData.put(profileKey, profileData);
+                        profilesData.put(profilePropertiesKey, profileData);
                     });
+                    profileSet.add(profileKey);
                 }
             });
         });
         ctx.putAll(profilesData);
-        profilesData.keySet().forEach(profileKey ->
+        profileSet.forEach(profileKey ->
             ctx.put(
                 middleware + "_secret_sealed_" + profileKey,
                 enabled ? TemplateUtils.generate(

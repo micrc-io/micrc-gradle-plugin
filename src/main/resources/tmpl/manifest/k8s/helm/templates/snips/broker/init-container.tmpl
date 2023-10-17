@@ -7,12 +7,12 @@
               providers=\${BROKER_PROVIDERS//,/ };
               for provider in \${providers[@]};
               do
-                BROKER_HOST_KEY="$provider"-"$BROKER_HOST_KEY_SUFFIX"
-                BROKER_HOST=${!BROKER_HOST_KEY}
-                BROKER_PORT_KEY="$provider"-"$BROKER_PORT_KEY_SUFFIX"
-                BROKER_PORT=${!BROKER_PORT_KEY}
+                BROKER_HOST_KEY="\$provider"-"\$BROKER_HOST_KEY_SUFFIX"
+                BROKER_HOST=\${!BROKER_HOST_KEY}
+                BROKER_PORT_KEY="\$provider"-"\$BROKER_PORT_KEY_SUFFIX"
+                BROKER_PORT=\${!BROKER_PORT_KEY}
 
-                if [ $BROKER_HOST ] && [ $BROKER_PORT ]; then
+                if [ \$BROKER_HOST ] && [ \$BROKER_PORT ]; then
                   until kafkacat -L -b \$BROKER_HOST:\$BROKER_PORT > /dev/null 2>&1 ; do echo waiting for broker; sleep 2; done;
                 fi
               done;
@@ -34,14 +34,14 @@
               providers=\${BROKER_PROVIDERS//,/ };
               for provider in \${providers[@]};
               do
-                BROKER_HOST_KEY="$provider"-"$BROKER_HOST_KEY_SUFFIX"
-                BROKER_HOST=${!BROKER_HOST_KEY}
-                BROKER_PORT_KEY="$provider"-"$BROKER_PORT_KEY_SUFFIX"
-                BROKER_PORT=${!BROKER_PORT_KEY}
-                BROKER_TOPICS_KEY="$provider"-"$BROKER_TOPICS_KEY_SUFFIX"
-                BROKER_TOPICS=${!BROKER_TOPICS_KEY}
+                BROKER_HOST_KEY="\$provider"-"\$BROKER_HOST_KEY_SUFFIX"
+                BROKER_HOST=\${!BROKER_HOST_KEY}
+                BROKER_PORT_KEY="\$provider"-"\$BROKER_PORT_KEY_SUFFIX"
+                BROKER_PORT=\${!BROKER_PORT_KEY}
+                BROKER_TOPICS_KEY="\$provider"-"\$BROKER_TOPICS_KEY_SUFFIX"
+                BROKER_TOPICS=\${!BROKER_TOPICS_KEY}
 
-                if [ $BROKER_HOST ] && [ $BROKER_PORT ]; then
+                if [ \$BROKER_HOST ] && [ \$BROKER_PORT ]; then
                   topics=\${BROKER_TOPICS//,/ };
                   for topic in \${topics[@]};
                   do
