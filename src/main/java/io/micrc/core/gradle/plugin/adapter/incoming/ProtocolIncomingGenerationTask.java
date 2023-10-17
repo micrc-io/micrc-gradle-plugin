@@ -83,16 +83,15 @@ public class ProtocolIncomingGenerationTask {
                 if (portType == null || "ADAPTER".equals(portType)) {
                     Map.Entry<String, PathItem> next = openAPI.getPaths().entrySet().iterator().next();
                     Map<String, Object> pathExtensions = next.getValue().getExtensions();
-                    if (pathExtensions == null) {
-                        return;
+                    if (pathExtensions != null) {
+                        Object adapter = pathExtensions.get("x-adapter");
+                        JsonNode adapterNode = JsonUtil.readTree(adapter);
+                        // custom
+                        map.put("custom", adapterNode.at("/customContent").textValue());
+                        // mapping
+                        map.put("requestMappingFile", spliceMappingPath(adapterNode.at("/requestMappingFile").textValue(), aggregationCode));
+                        map.put("responseMappingFile", spliceMappingPath(adapterNode.at("/responseMappingFile").textValue(), aggregationCode));
                     }
-                    Object adapter = pathExtensions.get("x-adapter");
-                    JsonNode adapterNode = JsonUtil.readTree(adapter);
-                    // custom
-                    map.put("custom", adapterNode.at("/customContent").textValue());
-                    // mapping
-                    map.put("requestMappingFile", spliceMappingPath(adapterNode.at("/requestMappingFile").textValue(), aggregationCode));
-                    map.put("responseMappingFile", spliceMappingPath(adapterNode.at("/responseMappingFile").textValue(), aggregationCode));
                     map.put("rootEntityName", aggregationName);
                     String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                             + basePackage.replace(".", "/") + "/infrastructure/command/"
@@ -186,16 +185,15 @@ public class ProtocolIncomingGenerationTask {
                 }
                 Map.Entry<String, PathItem> next = openAPI.getPaths().entrySet().iterator().next();
                 Map<String, Object> pathExtensions = next.getValue().getExtensions();
-                if (pathExtensions == null) {
-                    return;
+                if (pathExtensions != null) {
+                    Object adapter = pathExtensions.get("x-adapter");
+                    JsonNode adapterNode = JsonUtil.readTree(adapter);
+                    // custom
+                    map.put("custom", adapterNode.at("/customContent").textValue());
+                    // mapping
+                    map.put("requestMappingFile", spliceMappingPath(adapterNode.at("/requestMappingFile").textValue(), aggregationCode));
+                    map.put("responseMappingFile", spliceMappingPath(adapterNode.at("/responseMappingFile").textValue(), aggregationCode));
                 }
-                Object adapter = pathExtensions.get("x-adapter");
-                JsonNode adapterNode = JsonUtil.readTree(adapter);
-                // custom
-                map.put("custom", adapterNode.at("/customContent").textValue());
-                // mapping
-                map.put("requestMappingFile", spliceMappingPath(adapterNode.at("/requestMappingFile").textValue(), aggregationCode));
-                map.put("responseMappingFile", spliceMappingPath(adapterNode.at("/responseMappingFile").textValue(), aggregationCode));
                 String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                         + basePackage.replace(".", "/") + "/infrastructure/persistence/"
                         + aggregationPackage + "/" + logic + "Adapter.java";
@@ -243,16 +241,15 @@ public class ProtocolIncomingGenerationTask {
                 }
                 Map.Entry<String, PathItem> next = openAPI.getPaths().entrySet().iterator().next();
                 Map<String, Object> pathExtensions = next.getValue().getExtensions();
-                if (pathExtensions == null) {
-                    return;
+                if (pathExtensions != null) {
+                    Object adapter = pathExtensions.get("x-adapter");
+                    JsonNode adapterNode = JsonUtil.readTree(adapter);
+                    // custom
+                    map.put("custom", adapterNode.at("/customContent").textValue());
+                    // mapping
+                    map.put("requestMappingFile", spliceMappingPath(adapterNode.at("/requestMappingFile").textValue(), aggregationCode));
+                    map.put("responseMappingFile", spliceMappingPath(adapterNode.at("/responseMappingFile").textValue(), aggregationCode));
                 }
-                Object adapter = pathExtensions.get("x-adapter");
-                JsonNode adapterNode = JsonUtil.readTree(adapter);
-                // custom
-                map.put("custom", adapterNode.at("/customContent").textValue());
-                // mapping
-                map.put("requestMappingFile", spliceMappingPath(adapterNode.at("/requestMappingFile").textValue(), aggregationCode));
-                map.put("responseMappingFile", spliceMappingPath(adapterNode.at("/responseMappingFile").textValue(), aggregationCode));
                 String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                         + basePackage.replace(".", "/") + "/infrastructure/derivate/"
                         + aggregationPackage + "/" + logic + "Adapter.java";

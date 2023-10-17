@@ -112,15 +112,14 @@ public class ApplicationGenerationTask {
                 map.put("events", eventResult);
                 Info info = openAPI.getInfo();
                 Map<String, Object> infoExtensions = info.getExtensions();
-                if (infoExtensions == null) {
-                    return;
+                if (infoExtensions != null) {
+                    Object service = infoExtensions.get("x-service");
+                    JsonNode servicveNode = JsonUtil.readTree(service);
+                    // permission
+                    map.put("permission", servicveNode.at("/permission").textValue());
+                    // custom
+                    map.put("custom", servicveNode.at("/customContent").textValue());
                 }
-                Object service = infoExtensions.get("x-service");
-                JsonNode servicveNode = JsonUtil.readTree(service);
-                // permission
-                map.put("permission", servicveNode.at("/permission").textValue());
-                // custom
-                map.put("custom", servicveNode.at("/customContent").textValue());
                 String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                         + basePackage.replace(".", "/") + "/application/businesses/"
                         + aggregationPackage + "/" + logic + "Service.java";
@@ -310,17 +309,16 @@ public class ApplicationGenerationTask {
                 JsonNode metadataNode = JsonUtil.readTree(metadata);
                 Info info = openAPI.getInfo();
                 Map<String, Object> infoExtensions = info.getExtensions();
-                if (infoExtensions == null) {
-                    return;
+                if (infoExtensions != null) {
+                    Object service = infoExtensions.get("x-service");
+                    JsonNode servicveNode = JsonUtil.readTree(service);
+                    // permission
+                    map.put("permission", servicveNode.at("/permission").textValue());
+                    // custom
+                    map.put("custom", servicveNode.at("/customContent").textValue());
+                    // assembler
+                    map.put("assembler", spliceMappingPath(servicveNode.at("/assembler").textValue(), aggregationCode));
                 }
-                Object service = infoExtensions.get("x-service");
-                JsonNode servicveNode = JsonUtil.readTree(service);
-                // permission
-                map.put("permission", servicveNode.at("/permission").textValue());
-                // custom
-                map.put("custom", servicveNode.at("/customContent").textValue());
-                // assembler
-                map.put("assembler", spliceMappingPath(servicveNode.at("/assembler").textValue(), aggregationCode));
                 List<Object> queries = JsonUtil.writeValueAsList(metadataNode.at("/queries").toString(), Object.class);
                 if (queries != null) {
                     List<Object> queriesResult = queries.stream().map(quer -> {
@@ -409,17 +407,16 @@ public class ApplicationGenerationTask {
                 JsonNode metadataNode = JsonUtil.readTree(metadata);
                 Info info = openAPI.getInfo();
                 Map<String, Object> infoExtensions = info.getExtensions();
-                if (infoExtensions == null) {
-                    return;
+                if (infoExtensions != null) {
+                    Object service = infoExtensions.get("x-service");
+                    JsonNode servicveNode = JsonUtil.readTree(service);
+                    // permission
+                    map.put("permission", servicveNode.at("/permission").textValue());
+                    // custom
+                    map.put("custom", servicveNode.at("/customContent").textValue());
+                    // assembler
+                    map.put("assembler", spliceMappingPath(servicveNode.at("/assembler").textValue(), aggregationCode));
                 }
-                Object service = infoExtensions.get("x-service");
-                JsonNode servicveNode = JsonUtil.readTree(service);
-                // permission
-                map.put("permission", servicveNode.at("/permission").textValue());
-                // custom
-                map.put("custom", servicveNode.at("/customContent").textValue());
-                // assembler
-                map.put("assembler", spliceMappingPath(servicveNode.at("/assembler").textValue(), aggregationCode));
                 List<Object> queries = JsonUtil.writeValueAsList(metadataNode.at("/queries").toString(), Object.class);
                 if (queries != null) {
                     List<Object> queriesResult = queries.stream().map(quer -> {
