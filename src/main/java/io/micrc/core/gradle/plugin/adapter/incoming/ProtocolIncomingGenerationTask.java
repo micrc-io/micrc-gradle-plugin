@@ -98,19 +98,22 @@ public class ProtocolIncomingGenerationTask {
                             + aggregationPackage + "/" + logic + "Adapter.java";
                     FreemarkerUtil.generator("BusinessesAdapter", map, fileName);
                 } else if ("LISTENER".equals(portType)) {
-                    List<Object> listeners = JsonUtil.writeValueAsList(metadataNode.at("/listeners").toString(), Object.class);
-                    listeners.forEach(listener -> {
-                        String listenerJson = JsonUtil.writeValueAsString(listener);
-                        // event
-                        Object event = JsonUtil.readPath(listenerJson, "/event");
-                        map.put("event", event);
-                        // topic
-                        map.put("topic", JsonUtil.readPath(listenerJson, "/topic"));
-                        String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
-                                + basePackage.replace(".", "/") + "/infrastructure/message/"
-                                + aggregationPackage + "/" + event + logic + "Listener.java";
-                        FreemarkerUtil.generator("BusinessesListener", map, fileName);
-                    });
+                    JsonNode listenersNode = metadataNode.at("/listeners");
+                    if (listenersNode.isArray()) {
+                        JsonUtil.writeValueAsList(listenersNode.toString(), Object.class)
+                                .forEach(listener -> {
+                            String listenerJson = JsonUtil.writeValueAsString(listener);
+                            // event
+                            Object event = JsonUtil.readPath(listenerJson, "/event");
+                            map.put("event", event);
+                            // topic
+                            map.put("topic", JsonUtil.readPath(listenerJson, "/topic"));
+                            String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
+                                    + basePackage.replace(".", "/") + "/infrastructure/message/"
+                                    + aggregationPackage + "/" + event + logic + "Listener.java";
+                            FreemarkerUtil.generator("BusinessesListener", map, fileName);
+                        });
+                    }
                 } else if ("SCHEDULE".equals(portType)) {
                     // cron
                     String cron = metadataNode.at("/schedule/cron").textValue();

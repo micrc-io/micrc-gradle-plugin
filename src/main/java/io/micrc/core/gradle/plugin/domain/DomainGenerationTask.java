@@ -149,22 +149,24 @@ public class DomainGenerationTask {
         List<Object> list = (List) queryRules;
         List<HashMap<String, Object>> ruleMapList = list.stream().map(o -> {
             JsonNode jsonNode = JsonUtil.readTree(o);
+            HashMap<String, Object> ruleMap = new HashMap<>();
             String name = jsonNode.at("/name").textValue();
-            String paramTypesString = jsonNode.at("/paramTypes").toString();
-            List<String> paramTypes = JsonUtil.writeValueAsList(paramTypesString, String.class);
-            ArrayList<Object> paramList = new ArrayList<>();
-            for (int i = 0; i < paramTypes.size(); i++) {
-                String paramTypeString = paramTypes.get(i);
-                HashMap<String, Object> paramMap = new HashMap<>();
-                paramMap.put("type", getParamType(allSchemas, paramTypeString));
-                paramMap.put("index", i);
-                paramList.add(paramMap);
+            JsonNode paramTypesNode = jsonNode.at("/paramTypes");
+            if (paramTypesNode.isArray()) {
+                List<String> paramTypes = JsonUtil.writeValueAsList(paramTypesNode.toString(), String.class);
+                ArrayList<Object> paramList = new ArrayList<>();
+                for (int i = 0; i < paramTypes.size(); i++) {
+                    String paramTypeString = paramTypes.get(i);
+                    HashMap<String, Object> paramMap = new HashMap<>();
+                    paramMap.put("type", getParamType(allSchemas, paramTypeString));
+                    paramMap.put("index", i);
+                    paramList.add(paramMap);
+                }
+                ruleMap.put("params", paramList);
             }
             String resultType = jsonNode.at("/resultType").textValue();
             resultType = getParamType(allSchemas, resultType);
-            HashMap<String, Object> ruleMap = new HashMap<>();
             ruleMap.put("name", name);
-            ruleMap.put("params", paramList);
             ruleMap.put("resultType", resultType);
             return ruleMap;
         }).collect(Collectors.toList());

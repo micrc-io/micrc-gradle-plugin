@@ -85,31 +85,31 @@ public class ApplicationGenerationTask {
                 Object metadata = extensions.get("x-metadata");
                 JsonNode metadataNode = JsonUtil.readTree(metadata);
                 // event
-                List<Object> events = JsonUtil.writeValueAsList(metadataNode.at("/events").toString(), Object.class);
-                if (events == null) {
-                    return;
+                JsonNode eventsNode = metadataNode.at("/events");
+                if (eventsNode.isArray()) {
+                    Object eventResult = JsonUtil.writeValueAsList(eventsNode.toString(), Object.class)
+                            .stream().map(even -> {
+                        String evenJson = JsonUtil.writeValueAsString(even);
+                        HashMap<String, Object> e = new HashMap<>();
+                        e.put("event", JsonUtil.readPath(evenJson, "/event"));
+                        e.put("topic", JsonUtil.readPath(evenJson, "/topic"));
+                        List<Object> mappings = (List) JsonUtil.readPath(evenJson, "/mappings");
+                        if (mappings == null) {
+                            return null;
+                        }
+                        Object mappingResult = mappings.stream().map(mapp -> {
+                            String mappJson = JsonUtil.writeValueAsString(mapp);
+                            HashMap<String, Object> r = new HashMap<>();
+                            r.put("receiver", JsonUtil.readPath(mappJson, "/receiver"));
+                            r.put("service", JsonUtil.readPath(mappJson, "/service"));
+                            r.put("mappingFile", spliceMappingPath((String) JsonUtil.readPath(mappJson, "/mappingFile"), aggregationCode));
+                            return r;
+                        }).collect(Collectors.toList());
+                        e.put("mappings", mappingResult);
+                        return e;
+                    }).filter(Objects::nonNull).collect(Collectors.toList());
+                    map.put("events", eventResult);
                 }
-                Object eventResult = events.stream().map(even -> {
-                    String evenJson = JsonUtil.writeValueAsString(even);
-                    HashMap<String, Object> e = new HashMap<>();
-                    e.put("event", JsonUtil.readPath(evenJson, "/event"));
-                    e.put("topic", JsonUtil.readPath(evenJson, "/topic"));
-                    List<Object> mappings = (List) JsonUtil.readPath(evenJson, "/mappings");
-                    if (mappings == null) {
-                        return null;
-                    }
-                    Object mappingResult = mappings.stream().map(mapp -> {
-                        String mappJson = JsonUtil.writeValueAsString(mapp);
-                        HashMap<String, Object> r = new HashMap<>();
-                        r.put("receiver", JsonUtil.readPath(mappJson, "/receiver"));
-                        r.put("service", JsonUtil.readPath(mappJson, "/service"));
-                        r.put("mappingFile", spliceMappingPath((String) JsonUtil.readPath(mappJson, "/mappingFile"), aggregationCode));
-                        return r;
-                    }).collect(Collectors.toList());
-                    e.put("mappings", mappingResult);
-                    return e;
-                }).filter(Objects::nonNull).collect(Collectors.toList());
-                map.put("events", eventResult);
                 Info info = openAPI.getInfo();
                 Map<String, Object> infoExtensions = info.getExtensions();
                 if (infoExtensions != null && infoExtensions.get("x-service") != null) {
@@ -322,9 +322,10 @@ public class ApplicationGenerationTask {
                     // assembler
                     map.put("assembler", spliceMappingPath(metadataNode.at("/assembler").textValue(), aggregationCode));
                 }
-                List<Object> queries = JsonUtil.writeValueAsList(metadataNode.at("/queries").toString(), Object.class);
-                if (queries != null) {
-                    List<Object> queriesResult = queries.stream().map(quer -> {
+                JsonNode queriesNode = metadataNode.at("/queries");
+                if (queriesNode.isArray()) {
+                    List<Object> queriesResult = JsonUtil.writeValueAsList(queriesNode.toString(), Object.class)
+                            .stream().map(quer -> {
                         String querJson = JsonUtil.writeValueAsString(quer);
                         HashMap<String, Object> q = new HashMap<>();
                         Object entity = JsonUtil.readPath(querJson, "/entity");
@@ -341,9 +342,10 @@ public class ApplicationGenerationTask {
                     }).collect(Collectors.toList());
                     map.put("queries", queriesResult);
                 }
-                List<Object> integrations = JsonUtil.writeValueAsList(metadataNode.at("/integrations").toString(), Object.class);
-                if (integrations != null) {
-                    List<HashMap<String, Object>> integrationResult = integrations.stream().map(inte -> {
+                JsonNode integrationsNode = metadataNode.at("/integrations");
+                if (integrationsNode.isArray()) {
+                    List<HashMap<String, Object>> integrationResult = JsonUtil.writeValueAsList(integrationsNode.toString(), Object.class)
+                            .stream().map(inte -> {
                         String inteJson = JsonUtil.writeValueAsString(inte);
                         HashMap<String, Object> i = new HashMap<>();
                         i.put("protocol", spliceIntegrationProtocolPath((String) JsonUtil.readPath(inteJson, "/protocol"), caseCode));
@@ -423,9 +425,10 @@ public class ApplicationGenerationTask {
                     // assembler
                     map.put("assembler", spliceMappingPath(metadataNode.at("/assembler").textValue(), aggregationCode));
                 }
-                List<Object> queries = JsonUtil.writeValueAsList(metadataNode.at("/queries").toString(), Object.class);
-                if (queries != null) {
-                    List<Object> queriesResult = queries.stream().map(quer -> {
+                JsonNode queriesNode = metadataNode.at("/queries");
+                if (queriesNode.isArray()) {
+                    List<Object> queriesResult = JsonUtil.writeValueAsList(queriesNode.toString(), Object.class)
+                            .stream().map(quer -> {
                         String querJson = JsonUtil.writeValueAsString(quer);
                         HashMap<String, Object> q = new HashMap<>();
                         Object entity = JsonUtil.readPath(querJson, "/entity");
@@ -442,9 +445,10 @@ public class ApplicationGenerationTask {
                     }).collect(Collectors.toList());
                     map.put("queries", queriesResult);
                 }
-                List<Object> generalTechnologies = JsonUtil.writeValueAsList(metadataNode.at("/generalTechnologies").toString(), Object.class);
-                if (generalTechnologies != null) {
-                    List<HashMap<String, Object>> generalTechnologiesResult = generalTechnologies.stream().map(ge -> {
+                JsonNode generalTechnologiesNode = metadataNode.at("/generalTechnologies");
+                if (generalTechnologiesNode.isArray()) {
+                    List<HashMap<String, Object>> generalTechnologiesResult = JsonUtil.writeValueAsList(generalTechnologiesNode.toString(), Object.class)
+                            .stream().map(ge -> {
                         String geJson = JsonUtil.writeValueAsString(ge);
                         HashMap<String, Object> i = new HashMap<>();
                         i.put("name", JsonUtil.readPath(geJson, "/name"));
@@ -457,9 +461,10 @@ public class ApplicationGenerationTask {
                     }).collect(Collectors.toList());
                     map.put("generalTechnologies", generalTechnologiesResult);
                 }
-                List<Object> specialTechnologies = JsonUtil.writeValueAsList(metadataNode.at("/specialTechnologies").toString(), Object.class);
-                if (specialTechnologies != null) {
-                    List<HashMap<String, Object>> specialTechnologiesResult = specialTechnologies.stream().map(ge -> {
+                JsonNode specialTechnologiesNode = metadataNode.at("/specialTechnologies");
+                if (specialTechnologiesNode.isArray()) {
+                    List<HashMap<String, Object>> specialTechnologiesResult = JsonUtil.writeValueAsList(specialTechnologiesNode.toString(), Object.class)
+                            .stream().map(ge -> {
                         String geJson = JsonUtil.writeValueAsString(ge);
                         HashMap<String, Object> i = new HashMap<>();
                         i.put("name", JsonUtil.readPath(geJson, "/name"));
