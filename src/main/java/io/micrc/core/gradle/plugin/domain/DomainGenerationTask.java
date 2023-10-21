@@ -106,7 +106,7 @@ public class DomainGenerationTask {
                     parseReference2Map(map, allSchemas, modelExtensions.get("x-one-many"), modelExtensions.get("x-many-one"));
                     FreemarkerUtil.generator("Entity", map, fileNamePrefix + "/" + modelName + ".java");
                     // query rules
-                    parseRules2Map(map, allSchemas, modelExtensions.get("x-query-rules"));
+                    parseRules2Map(map, allSchemas, modelExtensions.get("x-query-rules"), modelName);
                     FreemarkerUtil.generator("Repository", map, fileNamePrefix + "/integration/" + modelName + "Repository.java");
                 } else if ("valobj".equals(modelExtensions.get("x-model-type"))) {
                     String dataType = (String) modelExtensions.get("x-data-type");
@@ -142,7 +142,7 @@ public class DomainGenerationTask {
         }
     }
 
-    private void parseRules2Map(HashMap<String, Object> map, Map<String, Schema> allSchemas, Object queryRules) {
+    private void parseRules2Map(HashMap<String, Object> map, Map<String, Schema> allSchemas, Object queryRules, String entityName) {
         if (queryRules == null) {
             return;
         }
@@ -151,22 +151,32 @@ public class DomainGenerationTask {
             JsonNode jsonNode = JsonUtil.readTree(o);
             HashMap<String, Object> ruleMap = new HashMap<>();
             String name = jsonNode.at("/name").textValue();
+            ruleMap.put("name", name);
             JsonNode paramTypesNode = jsonNode.at("/paramTypes");
+            boolean hasPageable = false;
             if (paramTypesNode.isArray()) {
                 List<String> paramTypes = JsonUtil.writeValueAsList(paramTypesNode.toString(), String.class);
                 ArrayList<Object> paramList = new ArrayList<>();
                 for (int i = 0; i < paramTypes.size(); i++) {
-                    String paramTypeString = paramTypes.get(i);
                     HashMap<String, Object> paramMap = new HashMap<>();
-                    paramMap.put("type", getParamType(allSchemas, paramTypeString));
+                    String paramType = getParamType(allSchemas, paramTypes.get(i));
+                    if (!hasPageable) {
+                        hasPageable = "Pageable".equals(paramType);
+                    }
+                    paramMap.put("type", paramType);
                     paramMap.put("index", i);
                     paramList.add(paramMap);
                 }
                 ruleMap.put("params", paramList);
             }
-            String resultType = jsonNode.at("/resultType").textValue();
-            resultType = getParamType(allSchemas, resultType);
-            ruleMap.put("name", name);
+            String resultType = getParamType(allSchemas, jsonNode.at("/resultType").textValue());
+            if (hasPageable) {
+                if ("Page".equals(resultType)) {
+                    resultType = "Page<" + entityName + ">";
+                } else {
+                    resultType = "Page<" + resultType + ">";
+                }
+            }
             ruleMap.put("resultType", resultType);
             return ruleMap;
         }).collect(Collectors.toList());

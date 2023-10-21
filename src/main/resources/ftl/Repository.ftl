@@ -5,6 +5,7 @@ import ${basePackage}.domain.${aggregationPackage}.valobj.*;
 import io.micrc.core.persistence.MicrcJpaRepository;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
