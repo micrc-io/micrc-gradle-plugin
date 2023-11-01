@@ -9,7 +9,7 @@ import io.micrc.core.gradle.plugin.lib.SwaggerUtil;
 import io.micrc.core.gradle.plugin.lib.TemplateUtils;
 import io.micrc.core.gradle.plugin.project.SchemaSynchronizeConfigure;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.info.Info;
 import lombok.extern.slf4j.Slf4j;
 import org.gradle.api.Project;
 
@@ -18,7 +18,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -81,10 +80,10 @@ public class ProtocolIncomingGenerationTask {
                 JsonNode metadataNode = JsonUtil.readTree(metadata);
                 String portType = metadataNode.at("/portType").textValue();
                 if (portType == null || "ADAPTER".equals(portType)) {
-                    Map.Entry<String, PathItem> next = openAPI.getPaths().entrySet().iterator().next();
-                    Map<String, Object> pathExtensions = next.getValue().getExtensions();
-                    if (pathExtensions != null && pathExtensions.get("x-adapter") != null) {
-                        Object adapter = pathExtensions.get("x-adapter");
+                    Info info = openAPI.getInfo();
+                    Map<String, Object> infoExtensions = info.getExtensions();
+                    if (infoExtensions != null && infoExtensions.get("x-adapter") != null) {
+                        Object adapter = infoExtensions.get("x-adapter");
                         JsonNode adapterNode = JsonUtil.readTree(adapter);
                         // custom
                         map.put("custom", adapterNode.at("/customContent").textValue());
@@ -186,10 +185,10 @@ public class ProtocolIncomingGenerationTask {
                 if (extensions == null) {
                     return;
                 }
-                Map.Entry<String, PathItem> next = openAPI.getPaths().entrySet().iterator().next();
-                Map<String, Object> pathExtensions = next.getValue().getExtensions();
-                if (pathExtensions != null && pathExtensions.get("x-adapter") != null) {
-                    Object adapter = pathExtensions.get("x-adapter");
+                Info info = openAPI.getInfo();
+                Map<String, Object> infoExtensions = info.getExtensions();
+                if (infoExtensions != null && infoExtensions.get("x-adapter") != null) {
+                    Object adapter = infoExtensions.get("x-adapter");
                     JsonNode adapterNode = JsonUtil.readTree(adapter);
                     // custom
                     map.put("custom", adapterNode.at("/customContent").textValue());
@@ -242,10 +241,10 @@ public class ProtocolIncomingGenerationTask {
                 if (extensions == null) {
                     return;
                 }
-                Map.Entry<String, PathItem> next = openAPI.getPaths().entrySet().iterator().next();
-                Map<String, Object> pathExtensions = next.getValue().getExtensions();
-                if (pathExtensions != null && pathExtensions.get("x-adapter") != null) {
-                    Object adapter = pathExtensions.get("x-adapter");
+                Info info = openAPI.getInfo();
+                Map<String, Object> infoExtensions = info.getExtensions();
+                if (infoExtensions != null && infoExtensions.get("x-adapter") != null) {
+                    Object adapter = infoExtensions.get("x-adapter");
                     JsonNode adapterNode = JsonUtil.readTree(adapter);
                     // custom
                     map.put("custom", adapterNode.at("/customContent").textValue());
