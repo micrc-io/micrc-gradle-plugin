@@ -7,15 +7,15 @@
               providers=\${DATABASE_PROVIDERS//,/ };
               for provider in \${providers[@]};
               do
-                DATABASE_HOST_KEY="\$provider"-"\$DATABASE_HOST_KEY_SUFFIX"
+                DATABASE_HOST_KEY="\$provider"_"\$DATABASE_HOST_KEY_SUFFIX"
                 DATABASE_HOST=\${!DATABASE_HOST_KEY}
-                DATABASE_PORT_KEY="\$provider"-"\$DATABASE_PORT_KEY_SUFFIX"
+                DATABASE_PORT_KEY="\$provider"_"\$DATABASE_PORT_KEY_SUFFIX"
                 DATABASE_PORT=\${!DATABASE_PORT_KEY}
-                DATABASE_NAME_KEY="\$provider"-"\$DATABASE_NAME_KEY_SUFFIX"
+                DATABASE_NAME_KEY="\$provider"_"\$DATABASE_NAME_KEY_SUFFIX"
                 DATABASE_NAME=\${!DATABASE_NAME_KEY}
-                DATABASE_USER_KEY="\$provider"-"\$DATABASE_USER_KEY_SUFFIX"
+                DATABASE_USER_KEY="\$provider"_"\$DATABASE_USER_KEY_SUFFIX"
                 DATABASE_USER=\${!DATABASE_USER_KEY}
-                DATABASE_PASSWORD_KEY="\$provider"-"\$DATABASE_PASSWORD_KEY_SUFFIX"
+                DATABASE_PASSWORD_KEY="\$provider"_"\$DATABASE_PASSWORD_KEY_SUFFIX"
                 DATABASE_PASSWORD=\${!DATABASE_PASSWORD_KEY}
 
                 if [ \$DATABASE_HOST ] && [ \$DATABASE_PORT ] && [ \$DATABASE_NAME ] && [ \$DATABASE_USER ] && [ \$DATABASE_PASSWORD ]; then
@@ -24,7 +24,8 @@
                 fi
               done;
           envFrom:
-            - secretRef: {{ .Values.database.databaseSecret }}
+            - secretRef:
+                name: {{ .Values.database.databaseSecret }}
           env:
             - name: DATABASE_PROVIDERS
               value: {{ .Values.database.databaseProviders }}

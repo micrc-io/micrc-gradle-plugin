@@ -1,17 +1,17 @@
 - name: memdb-init
           image: bitnami/redis:6.2
           command:
-            - sh
+            - /bin/bash
             - -c
             - |
               providers=\${MEMDB_PROVIDERS//,/ };
               for provider in \${providers[@]};
               do
-                MEMDB_HOST_KEY="\$provider"-"\$MEMDB_HOST_KEY_SUFFIX"
+                MEMDB_HOST_KEY="\$provider"_"\$MEMDB_HOST_KEY_SUFFIX"
                 MEMDB_HOST=\${!MEMDB_HOST_KEY}
-                MEMDB_PORT_KEY="\$provider"-"\$MEMDB_PORT_KEY_SUFFIX"
+                MEMDB_PORT_KEY="\$provider"_"\$MEMDB_PORT_KEY_SUFFIX"
                 MEMDB_PORT=\${!MEMDB_PORT_KEY}
-                MEMDB_PASSWORD_KEY="\$provider"-"\$MEMDB_PASSWORD_KEY_SUFFIX"
+                MEMDB_PASSWORD_KEY="\$provider"_"\$MEMDB_PASSWORD_KEY_SUFFIX"
                 MEMDB_PASSWORD=\${!MEMDB_PASSWORD_KEY}
 
                 if [ \$MEMDB_HOST ] && [ \$MEMDB_PORT ] && [ \$MEMDB_PASSWORD ]; then
@@ -19,7 +19,8 @@
                 fi
               done;
           envFrom:
-            - secretRef: {{ .Values.memdb.memdbSecret }}
+            - secretRef:
+                name: {{ .Values.memdb.memdbSecret }}
           env:
             - name: MEMDB_PROVIDERS
               value: {{ .Values.memdb.memdbProviders }}

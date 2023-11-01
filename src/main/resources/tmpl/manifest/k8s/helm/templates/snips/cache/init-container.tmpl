@@ -1,17 +1,17 @@
 - name: cache-init
           image: bitnami/redis:6.2
           command:
-            - sh
+            - /bin/bash
             - -c
             - |
               providers=\${CACHE_PROVIDERS//,/ };
               for provider in \${providers[@]};
               do
-                CACHE_PASSWORD_KEY="\$provider"-"\$CACHE_PASSWORD_KEY_SUFFIX"
+                CACHE_PASSWORD_KEY="\$provider"_"\$CACHE_PASSWORD_KEY_SUFFIX"
                 CACHE_PASSWORD=\${!CACHE_PASSWORD_KEY}
-                CACHE_HOST_KEY="\$provider"-"\$CACHE_HOST_KEY_SUFFIX"
+                CACHE_HOST_KEY="\$provider"_"\$CACHE_HOST_KEY_SUFFIX"
                 CACHE_HOST=\${!CACHE_HOST_KEY}
-                CACHE_PORT_KEY="\$provider"-"\$CACHE_PORT_KEY_SUFFIX"
+                CACHE_PORT_KEY="\$provider"_"\$CACHE_PORT_KEY_SUFFIX"
                 CACHE_PORT=\${!CACHE_PORT_KEY}
 
                 if [ \$CACHE_HOST ] && [ \$CACHE_PORT ] && [ \$CACHE_PASSWORD ]; then
@@ -19,7 +19,8 @@
                 fi
               done;
           envFrom:
-            - secretRef: {{ .Values.cache.cacheSecret }}
+            - secretRef:
+                name: {{ .Values.cache.cacheSecret }}
           env:
             - name: CACHE_PROVIDERS
               value: {{ .Values.cache.cacheProviders }}

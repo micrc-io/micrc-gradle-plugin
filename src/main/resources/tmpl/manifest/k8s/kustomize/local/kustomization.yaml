@@ -17,27 +17,27 @@ secretGenerator:
       - kafka-root-password=root
   - name: ${name}-mysql-database
     literals:
-      - public-database-host=mysql
-      - public-database-port=3306
-      - public-database-name=${name}
-      - public-database-user=${name}
-      - public-database-password=${name}
+      - public_database_host=mysql
+      - public_database_port=3306
+      - public_database_name=${name}
+      - public_database_user=${name}
+      - public_database_password=${name}
   - name: ${name}-redis-cache
     literals:
-      - public-cache-host=redis-master
-      - public-cache-port=6379
-      - public-cache-password=root
+      - public_cache_host=redis-master
+      - public_cache_port=6379
+      - public_cache_password=root
   - name: ${name}-kafka-broker
     literals:
-      - public-broker-host=kafka
-      - public-broker-port=9092
-      - public-broker-password=root
-      - public-broker-topics=
+      - public_broker_host=kafka
+      - public_broker_port=9092
+      - public_broker_password=root
+      - public_broker_topics=
   - name: ${name}-redis-memdb
     literals:
-      - public-memdb-host=redis-master
-      - public-memdb-port=6379
-      - public-memdb-password=root
+      - public_memdb_host=redis-master
+      - public_memdb_port=6379
+      - public_memdb_password=root
 
 helmCharts:
   - name: mysql

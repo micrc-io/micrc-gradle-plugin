@@ -177,7 +177,7 @@ public class ManifestsGenerationTask {
                     profile.keySet().forEach(prop -> {
                         String profileData = profilesData.get(profilePropertiesKey);
                         profileData += "\n    ";
-                        profileData += provider + "-" + middleware + "-" + prop + ": " + profile.get(prop);
+                        profileData += provider + "_" + middleware + "_" + prop + ": " + profile.get(prop);
                         profilesData.put(profilePropertiesKey, profileData);
                     });
                     profileSet.add(profileKey);

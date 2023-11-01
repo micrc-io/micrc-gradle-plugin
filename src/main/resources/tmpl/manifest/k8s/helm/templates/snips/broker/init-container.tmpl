@@ -1,15 +1,15 @@
 - name: broker-init
-          image: edenhill/kafkacat:1.6.0
+          image: confluentinc/cp-kafkacat:7.1.9
           command:
-            - sh
+            - /bin/bash
             - -c
             - |
               providers=\${BROKER_PROVIDERS//,/ };
               for provider in \${providers[@]};
               do
-                BROKER_HOST_KEY="\$provider"-"\$BROKER_HOST_KEY_SUFFIX"
+                BROKER_HOST_KEY="\$provider"_"\$BROKER_HOST_KEY_SUFFIX"
                 BROKER_HOST=\${!BROKER_HOST_KEY}
-                BROKER_PORT_KEY="\$provider"-"\$BROKER_PORT_KEY_SUFFIX"
+                BROKER_PORT_KEY="\$provider"_"\$BROKER_PORT_KEY_SUFFIX"
                 BROKER_PORT=\${!BROKER_PORT_KEY}
 
                 if [ \$BROKER_HOST ] && [ \$BROKER_PORT ]; then
@@ -17,7 +17,8 @@
                 fi
               done;
           envFrom:
-            - secretRef: {{ .Values.broker.brokerSecret }}
+            - secretRef:
+                name: {{ .Values.broker.brokerSecret }}
           env:
             - name: BROKER_PROVIDERS
               value: {{ .Values.broker.brokerProviders }}
@@ -34,11 +35,11 @@
               providers=\${BROKER_PROVIDERS//,/ };
               for provider in \${providers[@]};
               do
-                BROKER_HOST_KEY="\$provider"-"\$BROKER_HOST_KEY_SUFFIX"
+                BROKER_HOST_KEY="\$provider"_"\$BROKER_HOST_KEY_SUFFIX"
                 BROKER_HOST=\${!BROKER_HOST_KEY}
-                BROKER_PORT_KEY="\$provider"-"\$BROKER_PORT_KEY_SUFFIX"
+                BROKER_PORT_KEY="\$provider"_"\$BROKER_PORT_KEY_SUFFIX"
                 BROKER_PORT=\${!BROKER_PORT_KEY}
-                BROKER_TOPICS_KEY="\$provider"-"\$BROKER_TOPICS_KEY_SUFFIX"
+                BROKER_TOPICS_KEY="\$provider"_"\$BROKER_TOPICS_KEY_SUFFIX"
                 BROKER_TOPICS=\${!BROKER_TOPICS_KEY}
 
                 if [ \$BROKER_HOST ] && [ \$BROKER_PORT ]; then
