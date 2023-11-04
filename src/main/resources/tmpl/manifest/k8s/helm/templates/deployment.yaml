@@ -38,6 +38,15 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.serviceRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           args: ["production"]
+          env:
+            - name: BROKER_PROVIDERS
+              value: {{ .Values.broker.brokerProviders }}
+            - name: CACHE_PROVIDERS
+              value: {{ .Values.cache.cacheProviders }}
+            - name: DATABASE_PROVIDERS
+              value: {{ .Values.database.databaseProviders }}
+            - name: MEMDB_PROVIDERS
+              value: {{ .Values.memdb.memdbProviders }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
