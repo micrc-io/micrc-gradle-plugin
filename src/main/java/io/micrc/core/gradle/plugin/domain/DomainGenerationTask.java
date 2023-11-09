@@ -303,13 +303,12 @@ public class DomainGenerationTask {
             TemplateUtils.clearDir(dmnPath);
             TemplateUtils.listFile(aggregationsPath).forEach(currentAggregations -> {
                 // 复制changeset文件到resource/db
-                Path dbFilePath = Paths.get(currentAggregations.toString(), "db.yaml");
+                Path dbFilePath = Paths.get(currentAggregations.toString(), "changelog");
                 if (!dbFilePath.toFile().exists()) {
                     return;
                 }
                 String resourceDbPath = project.getProjectDir().getAbsolutePath()
-                        + SRC_MAIN_RESOURCES_DB_CHANGELOG + File.separator
-                        + project.getVersion() + File.separator + currentAggregations.getFileName();
+                        + SRC_MAIN_RESOURCES_DB_CHANGELOG + File.separator + currentAggregations.getFileName();
                 project.copy(copySpec -> copySpec.from(dbFilePath).into(resourceDbPath));
                 // 复制dmn文件到xxx-logic下
                 Path businessesRulePath = Paths.get(currentAggregations.toString(), "rule", "businesses");
