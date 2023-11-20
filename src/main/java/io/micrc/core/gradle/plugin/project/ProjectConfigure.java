@@ -147,6 +147,9 @@ public class ProjectConfigure {
             // runtime core
             dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.21");
             dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.5");
+            // shedlock for schedule distributed lock
+            dependencies.add("implementation", "net.javacrumbs.shedlock:shedlock-spring:4.42.0");
+            dependencies.add("implementation", "net.javacrumbs.shedlock:shedlock-provider-redis-spring:4.42.0");
             // persistence annotations
             dependencies.add("implementation", "jakarta.persistence:jakarta.persistence-api:2.2.3");
             // jackson annotation
