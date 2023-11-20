@@ -192,8 +192,11 @@ public class DomainGenerationTask {
             String modelType = null;
             String dataType = null;
             Map<String, Object> propertyExtensions = null;
-            if (null == $ref) {
-                // 基本类型
+            if ("array".equals(property.getType())) {
+                // 列表基本类型
+                modelType = findItemTypeAndSpliceArrayType(allSchemas, property);
+            } else if (null == $ref) {
+                // 其他基本类型
                 modelType = mapJsonType2JavaType(property.getType(), property.getFormat());
                 propertyExtensions = property.getExtensions();
             } else {
@@ -231,23 +234,29 @@ public class DomainGenerationTask {
         String modelType;
         Schema refProperty = allSchemas.get(refPropertyName);
         if ("array".equals(refProperty.getType())) {
-            String itemsRefString = JsonUtil.readTree(refProperty).at("/items").toString();
-            Object item$ref = JsonUtil.readPath(itemsRefString, "/$ref");
-            String itemTypeName;
-            if (item$ref == null) {
-                String type = (String) JsonUtil.readPath(itemsRefString, "/type");
-                String format = (String) JsonUtil.readPath(itemsRefString, "/format");
-                itemTypeName = mapJsonType2JavaType(type, format);
-            } else {
-                itemTypeName = splitRefName((String) item$ref);
-                itemTypeName = mapSchema2JavaType(itemTypeName, allSchemas);
-            }
-            modelType = "List<" + itemTypeName + ">";
+            modelType = findItemTypeAndSpliceArrayType(allSchemas, refProperty);
         } else if ("object".equals(refProperty.getType())) {
             modelType = refPropertyName;
         } else {
             modelType = mapJsonType2JavaType(refProperty.getType(), refProperty.getFormat());
         }
+        return modelType;
+    }
+
+    private String findItemTypeAndSpliceArrayType(Map<String, Schema> allSchemas, Schema refProperty) {
+        String modelType;
+        String itemsRefString = JsonUtil.readTree(refProperty).at("/items").toString();
+        Object item$ref = JsonUtil.readPath(itemsRefString, "/$ref");
+        String itemTypeName;
+        if (item$ref == null) {
+            String type = (String) JsonUtil.readPath(itemsRefString, "/type");
+            String format = (String) JsonUtil.readPath(itemsRefString, "/format");
+            itemTypeName = mapJsonType2JavaType(type, format);
+        } else {
+            itemTypeName = splitRefName((String) item$ref);
+            itemTypeName = mapSchema2JavaType(itemTypeName, allSchemas);
+        }
+        modelType = "List<" + itemTypeName + ">";
         return modelType;
     }
 
