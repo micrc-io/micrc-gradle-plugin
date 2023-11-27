@@ -11,6 +11,7 @@ import io.micrc.core.gradle.plugin.project.SchemaSynchronizeConfigure;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.groovy.json.internal.LazyMap;
 import org.gradle.api.Project;
 
 import java.io.File;
@@ -106,7 +107,22 @@ public class ProtocolIncomingGenerationTask {
                             Object event = JsonUtil.readPath(listenerJson, "/event");
                             map.put("event", event);
                             // topic
-                            map.put("topic", JsonUtil.readPath(listenerJson, "/topic"));
+                            Object topic = JsonUtil.readPath(listenerJson, "/topic");
+                            map.put("topic", topic);
+                            String factory = "kafkaListenerContainerFactory";
+                            if (project.hasProperty("activeProfile") &&  !"default".equalsIgnoreCase((String) project.property("activeProfile"))) {
+                                // 非default环境使用主题对应实例
+                                Object contextMeta = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
+                                        "x.content.server.middlewares.broker.topicProfile");
+                                if (null != contextMeta) {
+                                    LazyMap lazyMap = JsonUtil.writeObjectAsObject(contextMeta, LazyMap.class);
+                                    String provider = lazyMap.entrySet().stream()
+                                            .filter(entry -> JsonUtil.writeObjectAsList(entry.getValue(), Object.class).contains(topic))
+                                            .map(Map.Entry::getKey).findFirst().orElseThrow();
+                                    factory = factory + "-"  + provider;
+                                }
+                            }
+                            map.put("factory", factory);
                             String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                                     + basePackage.replace(".", "/") + "/infrastructure/message/"
                                     + aggregationPackage + "/" + event + logic + "Listener.java";

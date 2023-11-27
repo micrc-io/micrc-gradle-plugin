@@ -1,8 +1,10 @@
 package io.micrc.core.gradle.plugin.project;
 
 import groovy.util.Eval;
+import io.micrc.core.gradle.plugin.lib.JsonUtil;
 import io.micrc.core.gradle.plugin.lib.TemplateUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.groovy.json.internal.LazyMap;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -21,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ProjectConfigure {
@@ -196,6 +199,18 @@ public class ProjectConfigure {
                         "micrc.properties"
                     );
                     Files.deleteIfExists(propsFilePath);
+                    Object topicProfile = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
+                            "x.content.server.middlewares.broker.topicProfile");
+                    String activeProfilesMapping = "";
+                    if (null != topicProfile) {
+                        LazyMap lazyMap = JsonUtil.writeObjectAsObject(topicProfile, LazyMap.class);
+                        activeProfilesMapping = lazyMap.entrySet().stream()
+                                .map(entry -> {
+                                    String values = JsonUtil.writeObjectAsList(entry.getValue(), String.class).stream().collect(Collectors.joining(","));
+                                    return "micrc.broker.topics." + entry.getKey() + "=" + values;
+                                })
+                                .collect(Collectors.joining("\n"));
+                    }
                     Files.write(
                         propsFilePath,
                         List.of(
@@ -208,7 +223,8 @@ public class ProjectConfigure {
                                 )
                             ),
                             "micrc.api.public.uris=" + publicUri.orElse(""),
-                            "micrc.x-host=" + namespace.orElseThrow() + "." + ownerDomain.orElseThrow() + "." + contextName.orElseThrow()
+                            "micrc.x-host=" + namespace.orElseThrow() + "." + ownerDomain.orElseThrow() + "." + contextName.orElseThrow(),
+                                activeProfilesMapping
                         ),
                         StandardCharsets.UTF_8,
                         StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
