@@ -114,7 +114,7 @@ public class ProtocolIncomingGenerationTask {
                                 String activeProfile = (String) project.property("active_profile");
                                 if ("local".equalsIgnoreCase(activeProfile)) {
                                     // local使用public
-                                    factory = "kafkaListenerContainerFactory-public";
+                                    factory = factory + "-public";
                                 } else if (!"default".equalsIgnoreCase(activeProfile)) {
                                     // 其他非default环境使用主题对应实例
                                     Object contextMeta = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
