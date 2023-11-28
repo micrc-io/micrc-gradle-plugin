@@ -110,7 +110,8 @@ public class ProtocolIncomingGenerationTask {
                             Object topic = JsonUtil.readPath(listenerJson, "/topic");
                             map.put("topic", topic);
                             String factory = "kafkaListenerContainerFactory";
-                            if (project.hasProperty("activeProfile") &&  !"default".equalsIgnoreCase((String) project.property("activeProfile"))) {
+                            if (project.hasProperty("active_profile") && !"default".equalsIgnoreCase((String) project.property("active_profile"))
+                                    && !"local".equalsIgnoreCase((String) project.property("active_profile"))) {
                                 // 非default环境使用主题对应实例
                                 Object contextMeta = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
                                         "x.content.server.middlewares.broker.topicProfile");

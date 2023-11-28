@@ -18,6 +18,7 @@ build:
       jib:
         type: gradle
         fromImage: 'amazoncorretto:11'
+        args: []
     - image: ${logicName}
       sync:
         infer:
@@ -45,6 +46,10 @@ profiles:
     deploy:
       kubectl: {}
   - name: dev
+    patches:
+      - op: replace
+        path: /build/artifacts/0/jib/args
+        value: -Pactive_profile=dev
     manifests:
       kustomize:
         paths:
