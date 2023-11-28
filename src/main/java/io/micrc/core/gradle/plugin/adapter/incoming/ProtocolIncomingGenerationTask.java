@@ -110,17 +110,22 @@ public class ProtocolIncomingGenerationTask {
                             Object topic = JsonUtil.readPath(listenerJson, "/topic");
                             map.put("topic", topic);
                             String factory = "kafkaListenerContainerFactory";
-                            if (project.hasProperty("active_profile") && !"default".equalsIgnoreCase((String) project.property("active_profile"))
-                                    && !"local".equalsIgnoreCase((String) project.property("active_profile"))) {
-                                // 非default环境使用主题对应实例
-                                Object contextMeta = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
-                                        "x.content.server.middlewares.broker.topicProfile");
-                                if (null != contextMeta) {
-                                    LazyMap lazyMap = JsonUtil.writeObjectAsObject(contextMeta, LazyMap.class);
-                                    String provider = lazyMap.entrySet().stream()
-                                            .filter(entry -> JsonUtil.writeObjectAsList(entry.getValue(), Object.class).contains(topic))
-                                            .map(Map.Entry::getKey).findFirst().orElseThrow();
-                                    factory = factory + "-"  + provider;
+                            if (project.hasProperty("active_profile")) {
+                                String activeProfile = (String) project.property("active_profile");
+                                if ("local".equalsIgnoreCase(activeProfile)) {
+                                    // local使用public
+                                    factory = "kafkaListenerContainerFactory-public";
+                                } else if (!"default".equalsIgnoreCase(activeProfile)) {
+                                    // 其他非default环境使用主题对应实例
+                                    Object contextMeta = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
+                                            "x.content.server.middlewares.broker.topicProfile");
+                                    if (null != contextMeta) {
+                                        LazyMap lazyMap = JsonUtil.writeObjectAsObject(contextMeta, LazyMap.class);
+                                        String provider = lazyMap.entrySet().stream()
+                                                .filter(entry -> JsonUtil.writeObjectAsList(entry.getValue(), Object.class).contains(topic))
+                                                .map(Map.Entry::getKey).findFirst().orElseThrow();
+                                        factory = factory + "-"  + provider;
+                                    }
                                 }
                             }
                             map.put("factory", factory);
