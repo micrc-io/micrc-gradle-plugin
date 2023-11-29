@@ -18,7 +18,6 @@ build:
       jib:
         type: gradle
         fromImage: 'amazoncorretto:11'
-        args: []
     - image: ${logicName}
       sync:
         infer:
@@ -32,6 +31,11 @@ build:
 
 profiles:
   - name: local
+    patches:
+      - op: add
+        path: /build/artifacts/0/jib/args
+        value:
+          - -Pactive_profile=local
     build:
       tagPolicy:
         gitCommit:
@@ -47,7 +51,7 @@ profiles:
       kubectl: {}
   - name: dev
     patches:
-      - op: replace
+      - op: add
         path: /build/artifacts/0/jib/args
         value:
           - -Pactive_profile=dev
