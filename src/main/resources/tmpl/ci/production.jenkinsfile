@@ -32,10 +32,10 @@ pipeline {
         container('micrc') {
           sh "git checkout \$COMMIT"
           dir("${serviceName}") {
-            sh 'gradle -PBUILD_TYPE="production" clean'
+            sh 'export https_proxy=${proxyServerUrl} && gradle -PBUILD_TYPE="production" clean'
           }
           dir("${logicName}") {
-            sh 'mvn clean package -q'
+            sh 'export https_proxy=${proxyServerUrl} && mvn clean package -q'
           }
           dir("${serviceName}") {
             sh "export TAG=\$TAG && skaffold build -p \$PROFILE --default-repo=\$DOCKER_REGISTRY"
