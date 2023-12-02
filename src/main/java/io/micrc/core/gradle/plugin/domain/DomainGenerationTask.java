@@ -125,11 +125,16 @@ public class DomainGenerationTask {
         if (oneMany != null) {
             String oneManyString = (String) oneMany;
             String manyType = splitRefName(oneManyString);
-            String manyName = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, manyType) + "s";
+            String manyName = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, manyType);
+            manyName = manyName.endsWith("y") ? manyName.substring(0, manyName.length() - 1) + "ies" : manyName + "s";
             String mappedBy = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, map.get("modelName").toString());
             map.put("manyType", manyType);
             map.put("manyName", manyName);
             map.put("mappedBy", mappedBy);
+        } else {
+            map.remove("manyType");
+            map.remove("manyName");
+            map.remove("mappedBy");
         }
         if (manyOne != null) {
             String manyOneString = (String) manyOne;
@@ -139,11 +144,16 @@ public class DomainGenerationTask {
             map.put("oneType", oneType);
             map.put("oneName", oneName);
             map.put("joinColumn", joinColumn);
+        } else {
+            map.remove("oneType");
+            map.remove("oneName");
+            map.remove("joinColumn");
         }
     }
 
     private void parseRules2Map(HashMap<String, Object> map, Map<String, Schema> allSchemas, Object queryRules, String entityName) {
         if (queryRules == null) {
+            map.remove("rules");
             return;
         }
         List<Object> list = (List) queryRules;
