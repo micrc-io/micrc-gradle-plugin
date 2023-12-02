@@ -105,6 +105,9 @@ public class DeploymentConfigure {
                 ),
             "version", project.getVersion().toString()
         ));
+        ctx.put("proxyServer", "10.0.0.102");
+        ctx.put("proxyPort", "7890");
+        ctx.put("noProxyRepo", "repo.it.ouxxa.com");
         TemplateUtils.generate(
             ctx, project.getProjectDir().getAbsolutePath(),
             List.of("tmpl", "ci", buildType + ".jenkinsfile"),
