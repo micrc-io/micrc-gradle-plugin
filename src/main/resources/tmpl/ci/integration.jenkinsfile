@@ -32,10 +32,10 @@ pipeline {
         container('micrc') {
           sh "git checkout \$COMMIT"
           dir("${serviceName}") {
-            sh './gradlew -Dhttps.proxyHost=10.0.0.102 -Dhttps.proxyPort=7890 -Dhttps.nonProxyHosts=*.ouxun.com -PBUILD_TYPE="integration" clean'
+            sh 'gradle -PBUILD_TYPE="integration" clean'
           }
           dir("${logicName}") {
-            sh 'export https_proxy=${proxyServerUrl} && ./mvnw clean package -q'
+            sh 'mvn clean package -q'
           }
           dir("${serviceName}") {
             sh "export TAG=\$TAG && skaffold build -p \$PROFILE --default-repo=\$DOCKER_REGISTRY"
