@@ -38,7 +38,7 @@ pipeline {
             sh 'export https_proxy=${proxyServerUrl} && mvn clean package -q'
           }
           dir("${serviceName}") {
-            sh "export TAG=\$TAG && skaffold build -p \$PROFILE --default-repo=\$DOCKER_REGISTRY"
+            sh "export https_proxy=${proxyServerUrl} && export TAG=\$TAG && skaffold build -p \$PROFILE --default-repo=\$DOCKER_REGISTRY"
           }
           withCredentials([usernamePassword(credentialsId: "\$REGISTRY_CREDENTIAL", passwordVariable: 'REGISTRY_PASSWORD', usernameVariable: 'REGISTRY_USERNAME')]) {
             sh "docker login -u \$REGISTRY_USERNAME -p \$REGISTRY_PASSWORD \$DOCKER_REGISTRY"
