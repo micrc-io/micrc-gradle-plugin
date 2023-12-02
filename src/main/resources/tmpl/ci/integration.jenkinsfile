@@ -32,13 +32,13 @@ pipeline {
         container('micrc') {
           sh "git checkout \$COMMIT"
           dir("${serviceName}") {
-            sh 'export https_proxy=${proxyServerUrl} && gradle -PBUILD_TYPE="integration" clean'
+            sh 'export https_proxy=${proxyServerUrl} && ./gradlew -PBUILD_TYPE="integration" clean'
           }
           dir("${logicName}") {
-            sh 'export https_proxy=${proxyServerUrl} && mvn clean package -q'
+            sh 'export https_proxy=${proxyServerUrl} && ./mvnw clean package -q'
           }
           dir("${serviceName}") {
-            sh "export https_proxy=${proxyServerUrl} && sleep 1h && export TAG=\$TAG && skaffold build -p \$PROFILE --default-repo=\$DOCKER_REGISTRY"
+            sh "export TAG=\$TAG && skaffold build -p \$PROFILE --default-repo=\$DOCKER_REGISTRY"
           }
           withCredentials([usernamePassword(credentialsId: "\$REGISTRY_CREDENTIAL", passwordVariable: 'REGISTRY_PASSWORD', usernameVariable: 'REGISTRY_USERNAME')]) {
             sh "docker login -u \$REGISTRY_USERNAME -p \$REGISTRY_PASSWORD \$DOCKER_REGISTRY"
