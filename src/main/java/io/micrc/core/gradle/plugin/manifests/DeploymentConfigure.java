@@ -105,9 +105,17 @@ public class DeploymentConfigure {
                 ),
             "version", project.getVersion().toString()
         ));
-        ctx.put("proxyServer", "10.0.0.102");
-        ctx.put("proxyPort", "7890");
-        ctx.put("noProxyRepo", "repo.it.ouxxa.com");
+        proxyServerUrl.ifPresent(url -> {
+            String[] split = url.split(":");
+            ctx.put("proxyServer", split[split.length - 2].replaceAll("/", ""));
+            ctx.put("proxyPort", split[split.length - 1]);
+        });
+        Optional.ofNullable(configurable
+                ? (String) Eval.x(contextMeta, "x.content.global." + buildType + ".proxyRepoUrl")
+                : null).ifPresent(repoUrl -> {
+            String[] split = repoUrl.split("/");
+            ctx.put("noProxyRepo", split[2]);
+        });
         TemplateUtils.generate(
             ctx, project.getProjectDir().getAbsolutePath(),
             List.of("tmpl", "ci", buildType + ".jenkinsfile"),
