@@ -17,7 +17,7 @@ public class ${logic}Schedule {
     @Async
     @Scheduled(cron = "${cron}")
     @SchedulerLock(name = "${logic}")
-    private void execute() {
+    public void execute() {
         service.execute(new ${logic}Command());
     }
 }
