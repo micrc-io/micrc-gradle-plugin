@@ -127,9 +127,9 @@ public class ProtocolIncomingGenerationTask {
                                         factory = factory + "-"  + provider;
                                     }
                                 }
-                                log.info("generate the code by {}.", activeProfile);
+                                System.out.println("generate the code by: " + activeProfile);
                             } else {
-                                log.info("generate the code by default.");
+                                System.out.println("generate the code by: default");
                             }
                             map.put("factory", factory);
                             String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
