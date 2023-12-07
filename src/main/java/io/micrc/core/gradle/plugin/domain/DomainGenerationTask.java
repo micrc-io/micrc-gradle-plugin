@@ -103,7 +103,7 @@ public class DomainGenerationTask {
                     map.put("tableName", tableName);
                     parseProperties2Map(map, allSchemas, properties, true);
                     // one <-> many
-                    parseReference2Map(map, allSchemas, modelExtensions.get("x-one-many"), modelExtensions.get("x-many-one"));
+                    parseReference2Map(map, modelExtensions.get("x-one-many"), modelExtensions.get("x-many-one"), modelExtensions.get("x-one-many-unidirectional"));
                     FreemarkerUtil.generator("Entity", map, fileNamePrefix + "/" + modelName + ".java");
                     // query rules
                     parseRules2Map(map, allSchemas, modelExtensions.get("x-query-rules"), modelName);
@@ -121,7 +121,7 @@ public class DomainGenerationTask {
         });
     }
 
-    private void parseReference2Map(HashMap<String, Object> map, Map<String, Schema> allSchemas, Object oneMany, Object manyOne) {
+    private void parseReference2Map(HashMap<String, Object> map, Object oneMany, Object manyOne, Object oneManyUnidirectional) {
         if (oneMany != null) {
             String oneManyString = (String) oneMany;
             String manyType = splitRefName(oneManyString);
@@ -148,6 +148,21 @@ public class DomainGenerationTask {
             map.remove("oneType");
             map.remove("oneName");
             map.remove("joinColumn");
+        }
+        if (oneManyUnidirectional != null) {
+            String oneManyString = (String) oneManyUnidirectional;
+            String manyType = splitRefName(oneManyString);
+            String manyName = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, manyType);
+            manyName = manyName.endsWith("y") ? manyName.substring(0, manyName.length() - 1) + "ies" : manyName + "s";
+            String currentType = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, (String) map.get("modelName"));
+            String joinColumn = currentType + "_id";
+            map.put("manyTypeUnidirectional", manyType);
+            map.put("manyNameUnidirectional", manyName);
+            map.put("joinColumnUnidirectional", joinColumn);
+        } else {
+            map.remove("manyTypeUnidirectional");
+            map.remove("manyNameUnidirectional");
+            map.remove("joinColumnUnidirectional");
         }
     }
 

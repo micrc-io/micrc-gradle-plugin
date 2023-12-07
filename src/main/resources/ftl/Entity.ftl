@@ -49,4 +49,10 @@ public class ${modelName} implements Serializable {
     @JsonManagedReference
     private List<${manyType}> ${manyName};
 </#if>
+<#if manyTypeUnidirectional??>
+
+    @OneToMany(targetEntity = ${manyTypeUnidirectional}.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "${joinColumnUnidirectional}")
+    private List<${manyTypeUnidirectional}> ${manyNameUnidirectional};
+</#if>
 }
