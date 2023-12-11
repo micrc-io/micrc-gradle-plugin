@@ -27,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
     @SpecialTechnology(name = "${sp.name}",
         paramMappingFile = "${sp.paramMappingFile}",
         <#if sp.order?? && sp.order != ''>order = ${sp.order},
-        </#if><#if ge.variableMappingFile?? && ge.variableMappingFile != ''>variableMappingFile = "${ge.variableMappingFile}",
+        </#if><#if sp.variableMappingFile?? && sp.variableMappingFile != ''>variableMappingFile = "${sp.variableMappingFile}",
         </#if><#if sp.scriptContentPath?? && sp.scriptContentPath != ''>scriptContentPath = "${sp.scriptContentPath}",
         </#if><#if sp.scriptFilePath?? && sp.scriptFilePath != ''>scriptFilePath = "${sp.scriptFilePath}",
         </#if>technologyType = TechnologyType.${sp.technologyType}

@@ -245,6 +245,13 @@ public class ApplicationGenerationTask {
         return "aggregations/" + aggregationCode + "/mapping/" + fileName;
     }
 
+    private String spliceScriptPath(String fileName, String aggregationCode) {
+        if (fileName == null || fileName.isEmpty()) {
+            return "";
+        }
+        return "aggregations/" + aggregationCode + "/rule/technology/" + fileName;
+    }
+
     private String spliceIntegrationProtocolPath(String fileName, String caseCode) {
         if (fileName == null || fileName.isEmpty()) {
             return null;
@@ -455,7 +462,7 @@ public class ApplicationGenerationTask {
                         i.put("paramMappingFile", spliceMappingPath((String) JsonUtil.readPath(geJson, "/paramMappingFile"), aggregationCode));
                         i.put("variableMappingFile", spliceMappingPath((String) JsonUtil.readPath(geJson, "/variableMappingFile"), aggregationCode));
                         i.put("routeContentPath", JsonUtil.readPath(geJson, "/routeContentPath"));
-                        i.put("routeXmlFilePath", JsonUtil.readPath(geJson, "/routeXmlFilePath"));
+                        i.put("routeXmlFilePath", spliceScriptPath((String) JsonUtil.readPath(geJson, "/routeXmlFilePath"), aggregationCode));
                         i.put("order", JsonUtil.readPath(geJson, "/order"));
                         return i;
                     }).collect(Collectors.toList());
@@ -471,7 +478,7 @@ public class ApplicationGenerationTask {
                         i.put("paramMappingFile", spliceMappingPath((String) JsonUtil.readPath(geJson, "/paramMappingFile"), aggregationCode));
                         i.put("variableMappingFile", spliceMappingPath((String) JsonUtil.readPath(geJson, "/variableMappingFile"), aggregationCode));
                         i.put("technologyType", JsonUtil.readPath(geJson, "/technologyType"));
-                        i.put("scriptFilePath", JsonUtil.readPath(geJson, "/scriptFilePath"));
+                        i.put("scriptFilePath", spliceScriptPath((String) JsonUtil.readPath(geJson, "/scriptFilePath"), aggregationCode));
                         i.put("scriptContentPath", JsonUtil.readPath(geJson, "/scriptContentPath"));
                         i.put("order", JsonUtil.readPath(geJson, "/order"));
                         return i;
