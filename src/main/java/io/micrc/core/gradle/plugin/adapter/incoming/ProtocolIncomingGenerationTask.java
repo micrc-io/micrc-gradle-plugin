@@ -129,6 +129,7 @@ public class ProtocolIncomingGenerationTask {
                                 }
                                 System.out.println("generate the code by: " + activeProfile);
                             } else {
+                                factory = factory + "-embedded";
                                 System.out.println("generate the code by: default");
                             }
                             map.put("factory", factory);
