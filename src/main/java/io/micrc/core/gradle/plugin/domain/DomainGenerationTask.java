@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 public class DomainGenerationTask {
     public static final Map<String, String> AGGREGATION_NAME_MAP = new HashMap<>();
     public static final Map<String, Map<String, Schema>> AGGREGATION_SCHEMAS_MAP = new HashMap<>();
+    public static final Map<String, List<String>> AGGREGATION_ENTITIES_MAP = new HashMap<>();
     private static final String SRC_MAIN_RESOURCES = File.separator + "src" + File.separator + "main" + File.separator + "resources";
     private static final String SRC_MAIN_RESOURCES_AGGREGATIONS = SRC_MAIN_RESOURCES + File.separator + "aggregations";
     private static final String SRC_MAIN_RESOURCES_CASES = SRC_MAIN_RESOURCES + File.separator + "cases";
@@ -81,14 +82,16 @@ public class DomainGenerationTask {
             if (aggregationName == null) {
                 return;
             }
-            AGGREGATION_NAME_MAP.put(path.toFile().getName(), aggregationName);
-            AGGREGATION_SCHEMAS_MAP.put(path.toFile().getName(), allSchemas);
+            String aggregationCode = path.toFile().getName();
+            AGGREGATION_NAME_MAP.put(aggregationCode, aggregationName);
+            AGGREGATION_SCHEMAS_MAP.put(aggregationCode, allSchemas);
             String aggregationPackage = aggregationName.toLowerCase();
             map.put("aggregationPackage", aggregationPackage);
             String fileNamePrefix = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                     + basePackage.replace(".", "/") + "/domain/"
                     + aggregationPackage;
             // parse
+            ArrayList<String> entityList = new ArrayList<>();
             allSchemas.forEach((modelName, schema) -> {
                 Map modelExtensions = schema.getExtensions();
                 if (!"object".equals(schema.getType()) || modelExtensions == null) {
@@ -98,6 +101,7 @@ public class DomainGenerationTask {
                 map.put("modelName", modelName);
                 Map<String, Schema<?>> properties = schema.getProperties();
                 if ("entity".equals(modelExtensions.get("x-model-type"))) {
+                    entityList.add(modelName);
                     // table name
                     String tableName = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, modelName);
                     map.put("tableName", tableName);
@@ -118,6 +122,7 @@ public class DomainGenerationTask {
                     }
                 }
             });
+            AGGREGATION_ENTITIES_MAP.put(aggregationCode, entityList);
         });
     }
 

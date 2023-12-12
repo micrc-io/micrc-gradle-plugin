@@ -1,4 +1,4 @@
-package ${basePackage}.application.derivation.${aggregationPackage};
+package ${basePackage}.application.derivations.${aggregationPackage};
 
 import io.micrc.core.annotations.application.derivations.DerivationsExecution;
 import io.micrc.core.annotations.application.derivations.DerivationsService;

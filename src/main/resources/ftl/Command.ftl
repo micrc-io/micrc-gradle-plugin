@@ -1,6 +1,8 @@
 package ${basePackage}.domain.${aggregationPackage}.command;
 
-import ${basePackage}.domain.${aggregationPackage}.${entity};
+<#list entities as e>
+import ${basePackage}.domain.${aggregationPackage}.${e};
+</#list>
 import ${basePackage}.domain.${aggregationPackage}.valobj.*;
 import io.micrc.core.annotations.application.businesses.BatchProperty;
 import io.micrc.core.annotations.application.businesses.CommandLogic;

@@ -133,6 +133,7 @@ public class ApplicationGenerationTask {
                 String commJson = JsonUtil.writeValueAsString(comm);
                 Object entity = JsonUtil.readPath(commJson, "/entity");
                 map.put("entity", entity);
+                map.put("entities", DomainGenerationTask.AGGREGATION_ENTITIES_MAP.get(aggregationCode));
                 map.put("repository", spliceRepositoryClassName(map, entity));
                 List<Object> logicParams = (List) JsonUtil.readPath(commJson, "/logicParams");
                 if (logicParams != null) {
@@ -486,7 +487,7 @@ public class ApplicationGenerationTask {
                     map.put("specialTechnologies", specialTechnologiesResult);
                 }
                 String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
-                        + basePackage.replace(".", "/") + "/application/derivation/"
+                        + basePackage.replace(".", "/") + "/application/derivations/"
                         + aggregationPackage + "/" + logic + "Service.java";
                 FreemarkerUtil.generator("DerivationsService", map, fileName);
             });
