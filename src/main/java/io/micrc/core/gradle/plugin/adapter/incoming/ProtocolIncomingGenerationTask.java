@@ -41,6 +41,8 @@ public class ProtocolIncomingGenerationTask {
     }
 
     public void generateBusinessAdapter(Project project) {
+        String activeProfile = getActiveProfile(project);
+        log.info("generate code by: " + activeProfile);
         Path casesPath = Paths.get(project.getBuildDir() + MICRC_SCHEMA_CASES);
         if (!Files.exists(casesPath)) {
             return;
@@ -110,27 +112,18 @@ public class ProtocolIncomingGenerationTask {
                             Object topic = JsonUtil.readPath(listenerJson, "/topic");
                             map.put("topic", topic);
                             String factory = "kafkaListenerContainerFactory";
-                            if (project.hasProperty("active_profile")) {
-                                String activeProfile = (String) project.property("active_profile");
-                                if ("local".equalsIgnoreCase(activeProfile)) {
-                                    // local使用public
-                                    factory = factory + "-public";
-                                } else if (!"default".equalsIgnoreCase(activeProfile)) {
-                                    // 其他非default环境使用主题对应实例
-                                    Object contextMeta = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
-                                            "x.content.server.middlewares.broker.topicProfile");
-                                    if (null != contextMeta) {
-                                        LazyMap lazyMap = JsonUtil.writeObjectAsObject(contextMeta, LazyMap.class);
-                                        String provider = lazyMap.entrySet().stream()
-                                                .filter(entry -> JsonUtil.writeObjectAsList(entry.getValue(), Object.class).contains(topic))
-                                                .map(Map.Entry::getKey).findFirst().orElseThrow();
+                            if (!"default".equalsIgnoreCase(activeProfile) && !"local".equalsIgnoreCase(activeProfile)) {
+                                Object contextMeta = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
+                                        "x.content.server.middlewares.broker.topicProfile");
+                                if (null != contextMeta) {
+                                    LazyMap lazyMap = JsonUtil.writeObjectAsObject(contextMeta, LazyMap.class);
+                                    String provider = lazyMap.entrySet().stream()
+                                            .filter(entry -> JsonUtil.writeObjectAsList(entry.getValue(), Object.class).contains(topic))
+                                            .map(Map.Entry::getKey).findFirst().orElseThrow();
+                                    if (!"public".equalsIgnoreCase(provider)) {
                                         factory = factory + "-"  + provider;
                                     }
                                 }
-                                System.out.println("generate the code by: " + activeProfile);
-                            } else {
-                                factory = factory + "-embedded";
-                                System.out.println("generate the code by: default");
                             }
                             map.put("factory", factory);
                             String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
@@ -172,6 +165,13 @@ public class ProtocolIncomingGenerationTask {
         String[] urlSplit = openAPI.getServers().get(0).getUrl().split("/");
         String aggregationCode = urlSplit[urlSplit.length - 1].replace("-", "").toUpperCase();
         return aggregationCode;
+    }
+
+    private String getActiveProfile(Project project) {
+        if (project.hasProperty("active_profile")) {
+            return (String) project.property("active_profile");
+        }
+        return "default";
     }
 
     public void generatePresentationAdapter(Project project) {
