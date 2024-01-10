@@ -241,6 +241,7 @@ public class DomainGenerationTask {
             HashMap<String, String> propertyMap = new HashMap<>();
             propertyMap.put("name", name);
             propertyMap.put("modelType", modelType);
+            propertyMap.put("isList", Boolean.toString(modelType.startsWith("List")));
             propertyMap.put("dataType", dataType);
             if (findIdentityName && "identity".equals(dataType)) {
                 map.put("modelIdentityName", modelType);
