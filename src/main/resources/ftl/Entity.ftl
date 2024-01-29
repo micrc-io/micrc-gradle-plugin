@@ -30,7 +30,7 @@ public class ${modelName} implements Serializable {
     </#if><#if property.dataType?? && property.dataType == 'embedded'>@Embedded
     </#if><#if property.dataType?? && property.dataType == 'version'>@Version
     </#if><#if property.dataType?? && property.dataType == 'transient'>@Transient
-    </#if>private ${property.modelType} ${property.name}<#if property.dataType?? && property.dataType == 'identity'> = new ${property.modelType}()</#if><#if property.isList?? && property.isList == 'true'> = new ArrayList<>()</#if>;
+    </#if>private ${property.modelType} ${property.name}<#if property.dataType?? && property.dataType == 'identity'> = new ${property.modelType}()</#if>;
 <#if property.dataType?? && property.dataType == 'version'>    @PrePersist
     public void prePersist() {
         version = 0;
