@@ -12,7 +12,6 @@ import org.hibernate.annotations.TypeDef;
 import javax.persistence.*;
 import java.io.Serializable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Data
