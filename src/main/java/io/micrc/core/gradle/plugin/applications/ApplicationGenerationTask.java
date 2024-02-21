@@ -102,6 +102,7 @@ public class ApplicationGenerationTask {
                             HashMap<String, Object> r = new HashMap<>();
                             r.put("receiver", JsonUtil.readPath(mappJson, "/receiver"));
                             r.put("service", JsonUtil.readPath(mappJson, "/service"));
+                            r.put("batchModel", JsonUtil.readPath(mappJson, "/batchModel"));
                             r.put("mappingFile", spliceMappingPath((String) JsonUtil.readPath(mappJson, "/mappingFile"), aggregationCode));
                             return r;
                         }).collect(Collectors.toList());

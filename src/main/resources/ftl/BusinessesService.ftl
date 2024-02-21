@@ -22,7 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
         <#list event.mappings as mapping>
             @EventMapping(
                 mappingPath = "${mapping.mappingFile}",
-                mappingKey = "${mapping.service}",
+                mappingKey = "${mapping.service}",<#if mapping.batchModel??>
+                batchModel = "${mapping.batchModel}",</#if>
                 receiverAddress = "${mapping.receiver}"),
         </#list>
     </#if>
