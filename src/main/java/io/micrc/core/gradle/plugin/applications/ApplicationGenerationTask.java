@@ -169,7 +169,8 @@ public class ApplicationGenerationTask {
                         String modeJson = JsonUtil.writeValueAsString(mode);
                         HashMap<String, Object> m = new HashMap<>();
                         Object model = JsonUtil.readPath(modeJson, "/model");
-                        m.put("modelType", mapSchema2JavaType(model.toString(), DomainGenerationTask.AGGREGATION_SCHEMAS_MAP.get(aggregationCode)));
+                        Object batchFlag = JsonUtil.readPath(modeJson, "/batchFlag");
+                        m.put("modelType", mapSchema2JavaType(model.toString(), DomainGenerationTask.AGGREGATION_SCHEMAS_MAP.get(aggregationCode), Boolean.parseBoolean(batchFlag != null ? batchFlag.toString() : null)));
                         m.put("protocol", spliceIntegrationProtocolPath((String) JsonUtil.readPath(modeJson, "/protocol"), caseCode));
                         m.put("responseMappingFile", spliceMappingPath((String) JsonUtil.readPath(modeJson, "/responseMappingFile"), aggregationCode));
                         m.put("requestMappingFile", spliceMappingPath((String) JsonUtil.readPath(modeJson, "/requestMappingFile"), aggregationCode));
@@ -177,7 +178,7 @@ public class ApplicationGenerationTask {
                         m.put("order", JsonUtil.readPath(modeJson, "/order"));
                         m.put("ignoreIfParamAbsent", JsonUtil.readPath(modeJson, "/ignoreIfParamAbsent"));
                         m.put("batchEvent", JsonUtil.readPath(modeJson, "/batchEvent"));
-                        m.put("batchFlag", JsonUtil.readPath(modeJson, "/batchFlag"));
+                        m.put("batchFlag", batchFlag);
                         return m;
                     }).collect(Collectors.toList());
                     map.put("models", modelResult);
@@ -189,7 +190,7 @@ public class ApplicationGenerationTask {
             });
         });
     }
-    private String mapSchema2JavaType(String refPropertyName, Map<String, Schema> allSchemas) {
+    private String mapSchema2JavaType(String refPropertyName, Map<String, Schema> allSchemas, boolean findBatchModel) {
         String modelType;
         Schema refProperty = allSchemas.get(refPropertyName);
         if ("array".equals(refProperty.getType())) {
@@ -202,9 +203,14 @@ public class ApplicationGenerationTask {
                 itemTypeName = mapJsonType2JavaType(type, format);
             } else {
                 itemTypeName = splitRefName((String) item$ref);
-                itemTypeName = mapSchema2JavaType(itemTypeName, allSchemas);
+                itemTypeName = mapSchema2JavaType(itemTypeName, allSchemas, false);
             }
-            modelType = "List<" + itemTypeName + ">";
+            if (findBatchModel) {
+                // 批量集成使用单个模型接收
+                modelType = itemTypeName;
+            } else {
+                modelType = "List<" + itemTypeName + ">";
+            }
         } else if ("object".equals(refProperty.getType())) {
             modelType = refPropertyName;
         } else {
