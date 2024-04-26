@@ -32,7 +32,7 @@ pipeline {
         container('micrc') {
           sh "git checkout \$COMMIT"
           dir("${serviceName}") {
-            sh './gradlew -Dhttps.proxyHost=${proxyServer} -Dhttps.proxyPort=${proxyPort} -Dhttp.nonProxyHosts=${noProxyRepo} -PBUILD_TYPE="integration" clean'
+            sh './gradlew -Dhttps.proxyHost=${proxyServer} -Dhttps.proxyPort=${proxyPort} -Dhttp.nonProxyHosts=${noProxyRepo} -PBUILD_ENV="integration" clean'
           }
           dir("${logicName}") {
             sh 'mvn clean package -q'

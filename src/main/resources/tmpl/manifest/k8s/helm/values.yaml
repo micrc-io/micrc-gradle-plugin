@@ -23,9 +23,9 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
-
+# TODO 消息灰度 是否在这里区分
 defaultProfile: prod
-
+# TODO 消息中间件
 ${database_secret_values}
 
 ${cache_secret_values}
@@ -66,12 +66,13 @@ resources: {}
 autoscaling:
   enabled: true
   minReplicas: 3
-  maxReplicas: 100
+  # 弹性池
+  maxReplicas: 10
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
 nodeSelector: {}
 
 tolerations: []
-
+# 反亲和 pod 和哪些节点亲
 affinity: {}

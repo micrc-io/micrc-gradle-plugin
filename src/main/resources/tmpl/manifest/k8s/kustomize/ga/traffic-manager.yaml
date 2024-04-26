@@ -1,0 +1,56 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ${name}-service
+spec:
+  hosts:
+  - "${name}-service.${namespace}-ga.svc.cluster.local"
+  http:
+    - match:
+        - resourceLabels:
+            profile: ga
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: ${name}-service.${namespace}-alpha.svc.cluster.local
+    - route:
+        - destination:
+            port:
+              number: 8080
+            host: ${name}-service.${namespace}-beta.svc.cluster.local
+    - route:
+        - destination:
+            port:
+              number: 8080
+            host: ${name}-service.${namespace}-ga.svc.cluster.local
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ${name}-service-api
+spec:
+  hosts:
+  - "api.ga.${fqdn}"
+  gateways:
+  - ${entry}
+  http:
+  - match:
+    - uri:
+        prefix: /api/${ownerDomain}/${name}
+    route:
+    - destination:
+        port:
+          number: 8080
+        host: ${name}-service
+
+---
+apiVersion: networking.istio.io/v1alpha3
+# TODO 与消息灰度相关
+kind: DestinationRule
+metadata:
+  name: ${name}-service
+spec:
+  host: ${name}-service

@@ -11,7 +11,7 @@ pipeline {
     string(name: 'commit', defaultValue: '', description: 'git commit num')
     choice(
       name: 'profile',
-      choices: ['no-deploy', 'alpha', 'beta', 'prod'],
+      choices: ['no-deploy', 'alpha', 'beta', 'ga'],
       description: 'deploy profile'
     )
   }
@@ -21,10 +21,11 @@ pipeline {
     registry_credential='registry-admin'
     docker_registry='${registry}'
     gitops_repo='${gitopsRepo}'
+    proxy_host='${proxyServer}';
   }
 
   stages {
-    stage('${contextName} - integration') {
+    stage('${contextName} - production') {
       when {
         expression { params.commit != '' }
       }
@@ -32,7 +33,7 @@ pipeline {
         container('micrc') {
           sh "git checkout \$COMMIT"
           dir("${serviceName}") {
-            sh './gradlew -Dhttps.proxyHost=${proxyServer} -Dhttps.proxyPort=${proxyPort} -Dhttp.nonProxyHosts=${noProxyRepo} -PBUILD_TYPE="integration" clean'
+            sh 'if [ -z "\$PROXY_HOST" ];then ./gradlew -PBUILD_ENV="production" clean; else ./gradlew -Dhttps.proxyHost=${proxyServer} -Dhttps.proxyPort=${proxyPort} -Dhttp.nonProxyHosts=${noProxyRepo} -PBUILD_ENV="production" clean; fi'
           }
           dir("${logicName}") {
             sh 'mvn clean package -q'
@@ -59,8 +60,8 @@ pipeline {
             sh "/bin/cp ~/.docker/config.json \${serviceName}/build/micrc/manifests/k8s/kustomize/docker-config.json"
           }
           dir("${serviceName}") {
-            sh 'gradle -PBUILD_TYPE="production" clean'
-            sh 'gradle -PBUILD_TYPE="production" processResources'
+            sh 'gradle -PBUILD_ENV="production" clean'
+            sh 'gradle -PBUILD_ENV="production" processResources'
             sh "/bin/cp ~/.docker/config.json ./build/micrc/manifests/k8s/kustomize/docker-config.json"
             sh "export TAG=\$TAG && skaffold render -p \$PROFILE --digest-source=tag --default-repo=\$DOCKER_REGISTRY > ${contextName}-manifest.yaml"
           }

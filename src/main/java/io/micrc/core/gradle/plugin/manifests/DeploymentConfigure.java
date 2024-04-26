@@ -61,7 +61,7 @@ public class DeploymentConfigure {
         configureJenkins("production", project, contextMeta);
     }
 
-    private void configureJenkins(String buildType, Project project, Object contextMeta) {
+    private void configureJenkins(String buildEnv, Project project, Object contextMeta) {
         Optional<String> contextName =
             Optional.ofNullable(configurable
                 ? (String) Eval.x(contextMeta, "x.content.contextName")
@@ -71,13 +71,13 @@ public class DeploymentConfigure {
                 ? (String) Eval.x(contextMeta, "x.content.ownerDomain")
                 : FilenameUtils.getBaseName(project.getProjectDir().getParent()));
         Optional<String> proxyServerUrl = Optional.ofNullable(configurable
-            ? (String) Eval.x(contextMeta, "x.content.global." + buildType + ".proxyServerUrl")
+            ? (String) Eval.x(contextMeta, "x.content.global." + buildEnv + ".proxyServerUrl")
             : null);
         Optional<String> registry = Optional.ofNullable(configurable
-            ? (String) Eval.x(contextMeta, "x.content.global." + buildType + ".registry")
+            ? (String) Eval.x(contextMeta, "x.content.global." + buildEnv + ".registry")
             : null);
         Optional<String> gitopsRepo = Optional.ofNullable(configurable
-            ? (String) Eval.x(contextMeta, "x.content.global." + buildType + ".gitopsRepo")
+            ? (String) Eval.x(contextMeta, "x.content.global." + buildEnv + ".gitopsRepo")
             : null);
         String name = contextName.orElseThrow();
         Map<String, String> ctx = new HashMap<>(Map.of(
@@ -111,15 +111,15 @@ public class DeploymentConfigure {
             ctx.put("proxyPort", split[split.length - 1]);
         });
         Optional.ofNullable(configurable
-                ? (String) Eval.x(contextMeta, "x.content.global." + buildType + ".proxyRepoUrl")
+                ? (String) Eval.x(contextMeta, "x.content.global." + buildEnv + ".proxyRepoUrl")
                 : null).ifPresent(repoUrl -> {
             String[] split = repoUrl.split("/");
             ctx.put("noProxyRepo", split[2]);
         });
         TemplateUtils.generate(
             ctx, project.getProjectDir().getAbsolutePath(),
-            List.of("tmpl", "ci", buildType + ".jenkinsfile"),
-            List.of(buildType + ".jenkinsfile")
+            List.of("tmpl", "ci", buildEnv + ".jenkinsfile"),
+            List.of(buildEnv + ".jenkinsfile")
         );
     }
 }

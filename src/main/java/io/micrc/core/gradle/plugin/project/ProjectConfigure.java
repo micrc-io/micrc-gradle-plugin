@@ -44,17 +44,17 @@ public class ProjectConfigure {
 
     public void configure(Project project) {
         log.info("configure micrc project. ");
-        Optional<String> buildType = Optional.ofNullable((String) project.getProperties().get("BUILD_ENV"));
+        Optional<String> buildEnv = Optional.ofNullable((String) project.getProperties().get("BUILD_ENV"));
         Optional<Object> contextMeta = Optional.ofNullable(SchemaSynchronizeConfigure.metaData.get("contextMeta"));
-        configureIdentity(project, contextMeta.orElseThrow(), buildType.orElse("integration"));
+        configureIdentity(project, contextMeta.orElseThrow(), buildEnv.orElse("integration"));
         configurePlugin(project);
-        configureDependencies(project, contextMeta.orElseThrow(), buildType.orElse("integration"));
+        configureDependencies(project, contextMeta.orElseThrow(), buildEnv.orElse("integration"));
         configurePropertiesFile(project, contextMeta.orElseThrow());
         configureJunitTest(project);
     }
 
     private void configureIdentity(
-            Project project, Object contextMeta, String buildType) {
+            Project project, Object contextMeta, String buildEnv) {
         log.info("configure micrc project info for service. ");
         Optional<String> contextName =
             Optional.ofNullable(configurable
@@ -68,7 +68,7 @@ public class ProjectConfigure {
             : null);
         Optional<String> proxyRepoUrl =
             Optional.ofNullable(configurable
-                ? buildType.equals("integration")
+                ? buildEnv.equals("integration")
                     ? (String) Eval.x(contextMeta, "x.content.global.integration.proxyRepoUrl")
                     : (String) Eval.x(contextMeta, "x.content.global.production.proxyRepoUrl")
                 : null);
@@ -120,11 +120,11 @@ public class ProjectConfigure {
     }
 
     private void configureDependencies(
-            Project project, Object contextMeta, String buildType) {
+            Project project, Object contextMeta, String buildEnv) {
         log.info("configure maven repositories: mavenLocal, proxyRepoUrl, mavenCentral. ");
         Optional<String> proxyRepoUrl =
             Optional.ofNullable(configurable
-                ? buildType.equals("integration")
+                ? buildEnv.equals("integration")
                     ? (String) Eval.x(contextMeta, "x.content.global.integration.proxyRepoUrl")
                     : (String) Eval.x(contextMeta, "x.content.global.production.proxyRepoUrl")
                 : null);

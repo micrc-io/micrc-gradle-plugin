@@ -17,8 +17,10 @@ helmCharts:
     includeCRDs: false
     releaseName: ${name}
     version: ${version}
+    # 修改values 文件
     valuesInline:
       podAnnotations:
+        # 为我们所有的pod 治理 网络 （实现服务治理）
         sidecar.istio.io/inject: 'true'
       ${database_secret_inlineValues}
       ${cache_secret_inlineValues}

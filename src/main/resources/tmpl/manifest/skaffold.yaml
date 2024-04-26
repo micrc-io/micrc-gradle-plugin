@@ -7,6 +7,7 @@ build:
     push: false
   tagPolicy:
     envTemplate:
+      # {{}} qu huanjing bianliang
       template: "{{.TAG}}"
   artifacts:
     - image: ${serviceName}
@@ -59,6 +60,46 @@ profiles:
       kustomize:
         paths:
           - build/micrc/manifests/k8s/kustomize/dev
+        buildArgs:
+          - --enable-helm
+          - --load-restrictor=LoadRestrictionsNone
+    # huidu huanjing
+  - name: alpha
+    patches:
+      - op: add
+        path: /build/artifacts/0/jib/args
+        value:
+          - -Pactive_profile=alpha
+    manifests:
+      kustomize:
+        paths:
+          - build/micrc/manifests/k8s/kustomize/alpha
+        buildArgs:
+          - --enable-helm
+          - --load-restrictor=LoadRestrictionsNone
+  - name: beta
+    patches:
+      - op: add
+        path: /build/artifacts/0/jib/args
+        value:
+          - -Pactive_profile=beta
+    manifests:
+      kustomize:
+        paths:
+          - build/micrc/manifests/k8s/kustomize/beta
+        buildArgs:
+          - --enable-helm
+          - --load-restrictor=LoadRestrictionsNone
+  - name: ga
+    patches:
+      - op: add
+        path: /build/artifacts/0/jib/args
+        value:
+          - -Pactive_profile=ga
+    manifests:
+      kustomize:
+        paths:
+          - build/micrc/manifests/k8s/kustomize/ga
         buildArgs:
           - --enable-helm
           - --load-restrictor=LoadRestrictionsNone
