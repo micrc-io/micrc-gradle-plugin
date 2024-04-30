@@ -13,7 +13,6 @@ secretGenerator:
 resources:
   - ../base
   - ./sealed-secret.yaml
-  - ./traffic-manager.yaml
 
 patches:
   - patch: |-
@@ -27,11 +26,5 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/args
         value: ["alpha"]
-    target:
-      kind: Deployment
-  - patch: |-
-      - op: add
-        path: /metadata/labels/colibrierp.com.br\\/profile
-        value: alpha
     target:
       kind: Deployment

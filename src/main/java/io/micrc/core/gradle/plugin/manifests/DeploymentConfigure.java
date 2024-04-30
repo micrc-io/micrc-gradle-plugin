@@ -107,8 +107,13 @@ public class DeploymentConfigure {
         ));
         proxyServerUrl.ifPresent(url -> {
             String[] split = url.split(":");
-            ctx.put("proxyServer", split[split.length - 2].replaceAll("/", ""));
-            ctx.put("proxyPort", split[split.length - 1]);
+            if (split.length == 3) {
+                ctx.put("proxyServer", split[split.length - 2].replaceAll("/", ""));
+                ctx.put("proxyPort", split[split.length - 1]);
+            } else {
+                ctx.put("proxyServer", "");
+                ctx.put("proxyPort", "");
+            }
         });
         Optional.ofNullable(configurable
                 ? (String) Eval.x(contextMeta, "x.content.global." + buildEnv + ".proxyRepoUrl")
