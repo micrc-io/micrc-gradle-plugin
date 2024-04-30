@@ -199,33 +199,50 @@ public class ManifestsGenerationTask {
         HashSet<String> profileSet = new HashSet<>();
         providerProfiles.keySet().forEach(provider -> {
             Map<String, Object> profiles = (Map<String, Object>) providerProfiles.get(provider);
-            // 调度模板 可以共享状态应用的连接池，哪个有数据就默认即default
-            Map.Entry<String,Object> defaultProfile = profiles.entrySet()
+            // 调度模板 alpha, beta, ga可以共享状态应用的连接池，哪个有数据就默认即default
+            Map<String,Object> defaultProfiles = profiles.entrySet()
                     .stream()
                     .filter( entry -> !((Map<String, Object>) entry.getValue())
                             .keySet()
                             .isEmpty())
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("No default profile found in provider:" + provider + "(intro.json)"));
+                            .collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue));
+            // prod 下的调度模板
+            List<String> prod = List.of("alpha", "beta", "ga");
+            // 判断是否有prod下的调度模板
+            boolean isContainProdProfile = prod.stream().anyMatch(profiles::containsKey);
+            Map.Entry<String,Object> defaultProdProfile;
+            if (isContainProdProfile) {
+                // prod 默认取alpha, beta, ga 的第一个
+                defaultProdProfile = defaultProfiles.entrySet().stream()
+                        .filter(f-> prod.stream()
+                                .anyMatch(p-> p.equals(f.getKey()))
+                        )
+                        .findFirst()
+                        .orElse(null);
+            } else {
+                defaultProdProfile = null;
+            }
 
             profiles.keySet().forEach(profileKey -> {
                 String profilePropertiesKey = middleware + "_properties_" + profileKey;
                 profilesData.putIfAbsent(profilePropertiesKey, "");
                 Map<String, String> profile = (Map<String, String>) profiles.get(profileKey);
                 if (profile.keySet().isEmpty()) {
-                    profile = (Map<String, String>) defaultProfile.getValue();
+                    // 在生产环境 下 alpha 或 beta 或ga 没有key 取默认的，有则取自己的
+                    if(prod.contains(profileKey) && defaultProdProfile!=null) {
+                        System.out.println("currentKey:"+profileKey +",useKey:" + defaultProdProfile.getKey());
+                        profile = (Map<String, String>) defaultProdProfile.getValue();
+                    }
                 }
-                Map<String, String> finalProfile = profile;
-                profile.keySet().forEach(prop -> {
-                    String profileData = profilesData.get(profilePropertiesKey);
-                    profileData += "\n    ";
-                    profileData += provider + "_" + middleware + "_" + prop + ": " + finalProfile.get(prop);
-                    profilesData.put(profilePropertiesKey, profileData);
-                });
-                if ("prod".equals(provider)) {
+                if (!profile.keySet().isEmpty()) {
+                    Map<String, String> finalProfile = profile;
+                    profile.keySet().forEach(prop -> {
+                        String profileData = profilesData.get(profilePropertiesKey);
+                        profileData += "\n    ";
+                        profileData += provider + "_" + middleware + "_" + prop + ": " + finalProfile.get(prop);
+                        profilesData.put(profilePropertiesKey, profileData);
+                    });
                     profileSet.add(profileKey);
-                } else {
-                    profileSet.add(defaultProfile.getKey());
                 }
             });
         });

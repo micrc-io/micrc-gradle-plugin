@@ -6,22 +6,23 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
-
+import io.micrc.core.annotations.message.Adapter;
 import java.io.IOException;
 
-@MessageAdapter(
-    commandServicePath = "${basePackage}.application.businesses.${aggregationPackage}.${logic}Service",
-    eventName = "${event}"
-)
-public interface ${event}${logic}Listener {
+@MessageAdapter({
+<#list services as service>
+    @Adapter(commandServicePath="${basePackage}.application.businesses.${aggregationPackage}.${service.logic}Service",eventName="${service.event}",topicName="${service.topic}")<#if service_has_next>,</#if>
+</#list>
+})
+public interface ${name} {
 
     void adapt(ConsumerRecord<?, ?> consumerRecord, Acknowledgment acknowledgment) throws IOException;
 
-    @Component("${event}${logic}Listener")
-    class ${event}${logic}ListenerImpl implements ${event}${logic}Listener {
+    @Component("${name}")
+    class ${name}Impl implements ${name} {
 
         @KafkaListener(
-            topics = {"${topic}"}, groupId = "${event}${logic}", autoStartup = "true", concurrency = "3", containerFactory = "${factory}"
+            topics = {<#list topics as topic>"${topic}"<#if topic_has_next>,</#if></#list>}, groupId = "${groupId}", autoStartup = "true", concurrency = "3", containerFactory = "${factory}"
         )
         @Override
         @MessageExecution
