@@ -17,7 +17,7 @@ pipeline {
   }
   environment {
     tag='${version}'
-    git_credential='repo-admin'
+    git_credential='github-repo-admin'
     registry_credential='registry-admin'
     docker_registry='${registry}'
     gitops_repo='${gitopsRepo}'
@@ -27,7 +27,7 @@ pipeline {
   stages {
     stage('${contextName} - production') {
       when {
-        expression { params.commit != '' }
+          expression { params.commit != '' }
       }
       steps {
         container('micrc') {
@@ -57,7 +57,6 @@ pipeline {
         container('micrc') {
           withCredentials([usernamePassword(credentialsId: "\$REGISTRY_CREDENTIAL", passwordVariable: 'REGISTRY_PASSWORD', usernameVariable: 'REGISTRY_USERNAME')]) {
             sh "docker login -u \$REGISTRY_USERNAME -p \$REGISTRY_PASSWORD \$DOCKER_REGISTRY"
-            sh "/bin/cp ~/.docker/config.json \${serviceName}/build/micrc/manifests/k8s/kustomize/docker-config.json"
           }
           dir("${serviceName}") {
             sh 'gradle -PBUILD_ENV="production" clean'
@@ -69,7 +68,7 @@ pipeline {
             dir("../"){
               sh "chmod 777 -R ."
               withCredentials([usernamePassword(credentialsId: "\$GIT_CREDENTIAL", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-                  sh "export https_proxy=${proxyServerUrl} && git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@\$GITOPS_REPO gitops"
+                sh 'if [ -z "\$PROXY_HOST" ];then export https_proxy=${proxyServerUrl} && git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@\$GITOPS_REPO gitops; else git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@\$GITOPS_REPO gitops; fi'
               }
             }
             sh "mkdir -p ../gitops/profiles/\$PROFILE/${domainName}"
@@ -79,7 +78,7 @@ pipeline {
               sh "git config --global user.name 'jenkins'"
               sh "git add ."
               sh "git diff-index --quiet HEAD || git commit -m \"jenkins ci - version: \$TAG, profile: \$PROFILE\""
-              sh "export https_proxy=${proxyServerUrl} && git push"
+              sh 'if [ -z "\$PROXY_HOST" ];then export https_proxy=${proxyServerUrl} && git push; else git push; fi'
             }
           }
         }

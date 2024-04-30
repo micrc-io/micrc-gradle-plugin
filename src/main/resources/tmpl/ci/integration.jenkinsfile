@@ -58,8 +58,8 @@ pipeline {
             sh "docker login -u \$REGISTRY_USERNAME -p \$REGISTRY_PASSWORD \$DOCKER_REGISTRY"
           }
           dir("${serviceName}") {
-            sh 'gradle -PBUILD_TYPE="integration" clean'
-            sh 'gradle -PBUILD_TYPE="integration" processResources'
+            sh 'gradle -PBUILD_ENV="integration" clean'
+            sh 'gradle -PBUILD_ENV="integration" processResources'
             sh "/bin/cp ~/.docker/config.json ./build/micrc/manifests/k8s/kustomize/docker-config.json"
             sh "export TAG=\$TAG && skaffold render -p \$PROFILE --digest-source=tag --default-repo=\$DOCKER_REGISTRY > ${contextName}-manifest.yaml"
           }

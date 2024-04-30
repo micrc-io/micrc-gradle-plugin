@@ -7,7 +7,6 @@ build:
     push: false
   tagPolicy:
     envTemplate:
-      # {{}} qu huanjing bianliang
       template: "{{.TAG}}"
   artifacts:
     - image: ${serviceName}
@@ -63,7 +62,6 @@ profiles:
         buildArgs:
           - --enable-helm
           - --load-restrictor=LoadRestrictionsNone
-    # huidu huanjing
   - name: alpha
     patches:
       - op: add
