@@ -179,12 +179,6 @@ public class ManifestsGenerationTask {
                         List.of("tmpl", "manifest", "k8s", "kustomize", profile, "sealed-secret.yaml");
                 List<String> kustomizeProdSecretTargetPaths = List.of("k8s", "kustomize", profile, "sealed-secret.yaml");
                 TemplateUtils.generate(ctx, buildDirPath, kustomizeProdSecretPaths, kustomizeProdSecretTargetPaths);
-                List<String> kustomizeProdVirtualServicePaths =
-                        List.of("tmpl", "manifest", "k8s", "kustomize", profile, "traffic-manager.yaml");
-                List<String> kustomizeProdVirtualServiceTargetPaths = List.of("k8s", "kustomize",profile, "traffic-manager.yaml");
-                TemplateUtils.generate(
-                        ctx, buildDirPath, kustomizeProdVirtualServicePaths, kustomizeProdVirtualServiceTargetPaths
-                );
             }
         });
     }
