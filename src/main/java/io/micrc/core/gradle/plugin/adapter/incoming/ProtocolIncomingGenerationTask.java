@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ProtocolIncomingGenerationTask {
@@ -41,6 +42,7 @@ public class ProtocolIncomingGenerationTask {
 
     public void generateBusinessAdapter(Project project) {
         String activeProfile = getActiveProfile(project);
+        String envCamelcase = activeProfile.substring(0, 1).toUpperCase() + activeProfile.substring(1);
         log.info("generate code by: " + activeProfile);
         Path casesPath = Paths.get(project.getBuildDir() + MICRC_SCHEMA_CASES);
         // basePackage
@@ -155,7 +157,6 @@ public class ProtocolIncomingGenerationTask {
                 "x.content.server.middlewares.broker.logicGroup");
         if (null != partition) {
             LazyMap lazyMap = JsonUtil.writeObjectAsObject(partition, LazyMap.class);
-
             lazyMap.forEach((key, value) -> {
                 if (value instanceof List) {
                     List<Map<String,Object>> valueList = (List<Map<String,Object>>) value;
@@ -183,18 +184,18 @@ public class ProtocolIncomingGenerationTask {
                         String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                                 + basePackage.replace(".", "/") + "/infrastructure/message/"
                                 + key.toLowerCase() + "/" + key +finalKafkaInstance.toLowerCase()+i+ "Listener.java";
+                        List<String> topics = ((List<String>) valueMap.get("topics")).stream().map(m -> m + envCamelcase).collect(Collectors.toList());
                         Map<String,Object> listenerMap = Map.of(
-                                "topics", valueMap.get("topics"),
+                                "topics", topics,
                                 "services", valueMap.get("services"),
-                                "groupId", valueMap.get("groupId"),
+                                "groupId", valueMap.get("groupId")+"_"+activeProfile,
                                 "factory", finalFactory,
                                 "basePackage", basePackage,
                                 "aggregationPackage", key.toLowerCase(),
+                                "activeProfile", envCamelcase,
                                 "name", key +finalKafkaInstance.toLowerCase()+i+ "Listener"
 
                         );
-                        System.out.println("listener"+ listenerMap);
-                        System.out.println("fileName"+ fileName);
                         FreemarkerUtil.generator("BusinessesListener", listenerMap, fileName);
                     }
                 }

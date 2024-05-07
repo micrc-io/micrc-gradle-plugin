@@ -46,7 +46,16 @@ public class ApplicationGenerationTask {
         return instance;
     }
 
+    private String getActiveProfile(Project project) {
+        if (project.hasProperty("active_profile")) {
+            return (String) project.property("active_profile");
+        }
+        return "default";
+    }
+
     public void generateBusinessService(Project project) {
+        String activeProfile = getActiveProfile(project);
+        String envCamelcase = activeProfile.substring(0, 1).toUpperCase() + activeProfile.substring(1);
         Path casesPath = Paths.get(project.getBuildDir() + MICRC_SCHEMA_CASES);
         if (!Files.exists(casesPath)) {
             return;
@@ -121,6 +130,7 @@ public class ApplicationGenerationTask {
                     // custom
                     map.put("custom", servicveNode.at("/customContent").textValue());
                 }
+                map.put("activeProfile", envCamelcase);
                 String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                         + basePackage.replace(".", "/") + "/application/businesses/"
                         + aggregationPackage + "/" + logic + "Service.java";

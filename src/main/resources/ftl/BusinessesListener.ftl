@@ -11,7 +11,7 @@ import java.io.IOException;
 
 @MessageAdapter({
 <#list services as service>
-    @Adapter(commandServicePath="${basePackage}.application.businesses.${aggregationPackage}.${service.logic}Service",eventName="${service.event}",topicName="${service.topic}")<#if service_has_next>,</#if>
+    @Adapter(commandServicePath="${basePackage}.application.businesses.${aggregationPackage}.${service.logic}Service",eventName="${service.event}",topicName="${service.topic}${activeProfile}")<#if service_has_next>,</#if>
 </#list>
 })
 public interface ${name} {

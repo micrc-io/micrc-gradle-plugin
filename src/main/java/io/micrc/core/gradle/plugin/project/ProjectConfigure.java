@@ -148,8 +148,8 @@ public class ProjectConfigure {
             DependencyHandler dependencies = proj.getDependencies();
             dependencies.add("implementation", "org.springframework.boot:spring-boot-starter");
             // runtime core
-            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.33");
-            dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.9");
+            dependencies.add("implementation", "io.micrc.core:micrc-core:test");
+            dependencies.add("implementation", "io.micrc.core:micrc-annotations:test");
             // shedlock for schedule distributed lock
             dependencies.add("implementation", "net.javacrumbs.shedlock:shedlock-spring:4.42.0");
             dependencies.add("implementation", "net.javacrumbs.shedlock:shedlock-provider-redis-spring:4.42.0");
@@ -173,9 +173,18 @@ public class ProjectConfigure {
         });
     }
 
+    private String getActiveProfile(Project project) {
+        if (project.hasProperty("active_profile")) {
+            return (String) project.property("active_profile");
+        }
+        return "default";
+    }
+
     @SuppressWarnings("all")
     private void configurePropertiesFile(Project project, Object contextMeta) {
         log.info("generate properties file: micrc.properties. ");
+        String activeProfile = getActiveProfile(project);
+        String envCamelcase = activeProfile.substring(0, 1).toUpperCase() + activeProfile.substring(1);
         Optional<String> ownerDomain = Optional.ofNullable(configurable
             ? (String) Eval.x(contextMeta, "x.content.ownerDomain")
             : null);
@@ -206,7 +215,8 @@ public class ProjectConfigure {
                         LazyMap lazyMap = JsonUtil.writeObjectAsObject(topicProfile, LazyMap.class);
                         activeProfilesMapping = lazyMap.entrySet().stream()
                                 .map(entry -> {
-                                    String values = JsonUtil.writeObjectAsList(entry.getValue(), String.class).stream().collect(Collectors.joining(","));
+                                    String values = JsonUtil.writeObjectAsList(entry.getValue(), String.class).stream().map(m -> m
+                                    + envCamelcase).collect(Collectors.joining(","));
                                     return "micrc.broker.topics." + entry.getKey() + "=" + values;
                                 })
                                 .collect(Collectors.joining("\n"));
