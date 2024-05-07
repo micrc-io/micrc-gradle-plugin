@@ -148,8 +148,8 @@ public class ProjectConfigure {
             DependencyHandler dependencies = proj.getDependencies();
             dependencies.add("implementation", "org.springframework.boot:spring-boot-starter");
             // runtime core
-            dependencies.add("implementation", "io.micrc.core:micrc-core:test");
-            dependencies.add("implementation", "io.micrc.core:micrc-annotations:test");
+            dependencies.add("implementation", "io.micrc.core:micrc-core:v0.0.33");
+            dependencies.add("implementation", "io.micrc.core:micrc-annotations:v0.0.9");
             // shedlock for schedule distributed lock
             dependencies.add("implementation", "net.javacrumbs.shedlock:shedlock-spring:4.42.0");
             dependencies.add("implementation", "net.javacrumbs.shedlock:shedlock-provider-redis-spring:4.42.0");
