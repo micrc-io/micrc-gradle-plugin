@@ -1,18 +1,16 @@
 package io.micrc.core.gradle.plugin.manifests;
 
 import groovy.util.Eval;
+import io.micrc.core.gradle.plugin.lib.IntroJsonParser;
+import io.micrc.core.gradle.plugin.lib.SystemEnv;
 import io.micrc.core.gradle.plugin.lib.TemplateUtils;
 import io.micrc.core.gradle.plugin.project.SchemaSynchronizeConfigure;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.codehaus.groovy.util.StringUtil;
 import org.gradle.api.Project;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 public class ManifestsGenerationTask {
@@ -31,8 +29,10 @@ public class ManifestsGenerationTask {
         return instance;
     }
 
+
     @SuppressWarnings("unchecked")
     public void generateManifests(Project project) {
+        String activeProfile = SystemEnv.getActiveProfile(project);
         log.info("generate manifests");
         String buildDirPath = project.getBuildDir().getAbsolutePath() + File.separator + MICRC_MANIFESTS_BUILD_DIR;
         TemplateUtils.clearDir(Path.of(buildDirPath));
@@ -81,7 +81,7 @@ public class ManifestsGenerationTask {
                 );
             }
             middlewareBaseSnipsTemplateContext(ctx, buildDirPath, middleware, enabled);
-            middlewareProfilesSnipsTemplateContext(ctx, profiles.orElseThrow(), buildDirPath, middleware, enabled);
+            middlewareProfilesSnipsTemplateContext(ctx, profiles.orElseThrow(), buildDirPath, middleware, enabled, activeProfile);
         });
 
         // 移除意外产生的out-PrintWriter
@@ -89,7 +89,7 @@ public class ManifestsGenerationTask {
         // 生成service helm deployment
         generateHelm(ctx, buildDirPath, name);
         // 生成kustomize base/local/dev
-        generateKustomize(ctx, buildDirPath);
+        generateKustomize(ctx, buildDirPath, activeProfile);
     }
 
     private void generateHelm(Map<String, String> ctx, String buildDirPath, String contextName) {
@@ -136,7 +136,7 @@ public class ManifestsGenerationTask {
         TemplateUtils.generate(ctx, buildDirPath, deploymentPaths, deploymentTargetPaths);
     }
 
-    private void generateKustomize(Map<String, String> ctx, String buildDirPath) {
+    private void generateKustomize(Map<String, String> ctx, String buildDirPath, String activeProfile) {
         // kustomize base kustomization.yaml and sealed-secret.yaml
         List<String> kustomizeBasePaths =
                 List.of("tmpl", "manifest", "k8s", "kustomize", "base", "kustomization.yaml");
@@ -162,25 +162,18 @@ public class ManifestsGenerationTask {
         TemplateUtils.generate(
                 ctx, buildDirPath, kustomizeDevVirtualServicePaths, kustomizeDevVirtualServiceTargetPaths
         );
-        // avoid you cannot config intro.json with prod env depart;
-        // kustomize alpha beta, ga kustomization.yaml
-        List.of("alpha","beta","ga").forEach(profile-> {
-            // 获取ctx 以某某结尾的key
-            Map<String, String> filteredMap = ctx.entrySet().stream()
-                    .filter(entry -> entry.getKey().endsWith("_"+profile))
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            log.info("filteredMap: {}", filteredMap);
-            if (!filteredMap.isEmpty()) {
-                List<String> kustomizeProdPaths =
-                        List.of("tmpl", "manifest", "k8s", "kustomize", profile, "kustomization.yaml");
-                List<String> kustomizeProdTargetPaths = List.of("k8s", "kustomize", profile, "kustomization.yaml");
-                TemplateUtils.generate(ctx, buildDirPath, kustomizeProdPaths, kustomizeProdTargetPaths);
-                List<String> kustomizeProdSecretPaths =
-                        List.of("tmpl", "manifest", "k8s", "kustomize", profile, "sealed-secret.yaml");
-                List<String> kustomizeProdSecretTargetPaths = List.of("k8s", "kustomize", profile, "sealed-secret.yaml");
-                TemplateUtils.generate(ctx, buildDirPath, kustomizeProdSecretPaths, kustomizeProdSecretTargetPaths);
-            }
-        });
+
+        if (IntroJsonParser.isProdProfile(activeProfile)) {
+            // kustomize prod kustomization.yaml
+            List<String> kustomizeProdPaths =
+                    List.of("tmpl", "manifest", "k8s", "kustomize", activeProfile, "kustomization.yaml");
+            List<String> kustomizeProdTargetPaths = List.of("k8s", "kustomize", activeProfile, "kustomization.yaml");
+            TemplateUtils.generate(ctx, buildDirPath, kustomizeProdPaths, kustomizeProdTargetPaths);
+            List<String> kustomizeProdSecretPaths =
+                    List.of("tmpl", "manifest", "k8s", "kustomize", activeProfile, "sealed-secret.yaml");
+            List<String> kustomizeProdSecretTargetPaths = List.of("k8s", "kustomize", activeProfile, "sealed-secret.yaml");
+            TemplateUtils.generate(ctx, buildDirPath, kustomizeProdSecretPaths, kustomizeProdSecretTargetPaths);
+        }
     }
 
 
@@ -188,55 +181,32 @@ public class ManifestsGenerationTask {
     @SuppressWarnings("unchecked")
     private void middlewareProfilesSnipsTemplateContext(
             Map<String, String> ctx, Map<String, Object> providerProfiles,
-            String buildDirPath, String middleware, boolean enabled) {
+            String buildDirPath, String middleware, boolean enabled, String activeProfile) {
         Map<String, String> profilesData = new HashMap<>();
         HashSet<String> profileSet = new HashSet<>();
         providerProfiles.keySet().forEach(provider -> {
             Map<String, Object> profiles = (Map<String, Object>) providerProfiles.get(provider);
-            // 调度模板 alpha, beta, ga可以共享状态应用的连接池，哪个有数据就默认即default
-            Map<String,Object> defaultProfiles = profiles.entrySet()
-                    .stream()
-                    .filter( entry -> !((Map<String, Object>) entry.getValue())
-                            .keySet()
-                            .isEmpty())
-                            .collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue));
-            // prod 下的调度模板
-            List<String> prod = List.of("alpha", "beta", "ga");
-            // 判断是否有prod下的调度模板
-            boolean isContainProdProfile = prod.stream().anyMatch(profiles::containsKey);
-            Map.Entry<String,Object> defaultProdProfile;
-            if (isContainProdProfile) {
-                // prod 默认取alpha, beta, ga 的第一个
-                defaultProdProfile = defaultProfiles.entrySet().stream()
-                        .filter(f-> prod.stream()
-                                .anyMatch(p-> p.equals(f.getKey()))
-                        )
-                        .findFirst()
-                        .orElse(null);
-            } else {
-                defaultProdProfile = null;
-            }
 
             profiles.keySet().forEach(profileKey -> {
-                String profilePropertiesKey = middleware + "_properties_" + profileKey;
-                profilesData.putIfAbsent(profilePropertiesKey, "");
-                Map<String, String> profile = (Map<String, String>) profiles.get(profileKey);
-                if (profile.keySet().isEmpty()) {
-                    // 在生产环境 下 alpha 或 beta 或ga 没有key 取默认的，有则取自己的
-                    if(prod.contains(profileKey) && defaultProdProfile!=null) {
-                        System.out.println("currentKey:"+profileKey +",useKey:" + defaultProdProfile.getKey());
-                        profile = (Map<String, String>) defaultProdProfile.getValue();
-                    }
+                String activeProfileKey = IntroJsonParser.getProfileIgnoreAnyProfile(profileKey,activeProfile);
+                if (null == activeProfileKey) {
+                    return;
                 }
+                System.out.println("keyss......" + activeProfileKey);
+                String profilePropertiesKey = middleware + "_properties_" + activeProfileKey;
+                profilesData.putIfAbsent(profilePropertiesKey, "");
+                Map<String, Object> profile = (Map<String, Object>) profiles.get(profileKey);
                 if (!profile.keySet().isEmpty()) {
-                    Map<String, String> finalProfile = profile;
-                    profile.keySet().forEach(prop -> {
+                    Map<String,String> instance = (Map<String,String>)profile.get("instance");
+                    instance.keySet().forEach(prop -> {
                         String profileData = profilesData.get(profilePropertiesKey);
                         profileData += "\n    ";
-                        profileData += provider + "_" + middleware + "_" + prop + ": " + finalProfile.get(prop);
+                        profileData += provider + "_" + middleware + "_" + prop + ": " + instance.get(prop);
                         profilesData.put(profilePropertiesKey, profileData);
                     });
-                    profileSet.add(profileKey);
+                    if (!instance.keySet().isEmpty()) {
+                        profileSet.add(activeProfileKey);
+                    }
                 }
             });
         });

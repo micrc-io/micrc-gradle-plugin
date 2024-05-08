@@ -1,7 +1,9 @@
 package io.micrc.core.gradle.plugin.project;
 
 import groovy.util.Eval;
+import io.micrc.core.gradle.plugin.lib.IntroJsonParser;
 import io.micrc.core.gradle.plugin.lib.JsonUtil;
+import io.micrc.core.gradle.plugin.lib.SystemEnv;
 import io.micrc.core.gradle.plugin.lib.TemplateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.groovy.json.internal.LazyMap;
@@ -173,17 +175,11 @@ public class ProjectConfigure {
         });
     }
 
-    private String getActiveProfile(Project project) {
-        if (project.hasProperty("active_profile")) {
-            return (String) project.property("active_profile");
-        }
-        return "default";
-    }
 
     @SuppressWarnings("all")
     private void configurePropertiesFile(Project project, Object contextMeta) {
         log.info("generate properties file: micrc.properties. ");
-        String activeProfile = getActiveProfile(project);
+        String activeProfile = SystemEnv.getActiveProfile(project);
         String envCamelcase = activeProfile.substring(0, 1).toUpperCase() + activeProfile.substring(1);
         Optional<String> ownerDomain = Optional.ofNullable(configurable
             ? (String) Eval.x(contextMeta, "x.content.ownerDomain")
@@ -208,18 +204,26 @@ public class ProjectConfigure {
                         "micrc.properties"
                     );
                     Files.deleteIfExists(propsFilePath);
-                    Object topicProfile = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
-                            "x.content.server.middlewares.broker.topicProfile");
+                    String profile = IntroJsonParser.getIntroJsonProfile(project);
+                    Object profiles = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
+                            "x.content.server.middlewares.broker.profiles");
                     String activeProfilesMapping = "";
-                    if (null != topicProfile) {
-                        LazyMap lazyMap = JsonUtil.writeObjectAsObject(topicProfile, LazyMap.class);
+                    if (null != profiles) {
+                        LazyMap lazyMap = JsonUtil.writeObjectAsObject(profiles, LazyMap.class);
                         activeProfilesMapping = lazyMap.entrySet().stream()
                                 .map(entry -> {
-                                    String values = JsonUtil.writeObjectAsList(entry.getValue(), String.class).stream().map(m -> m
-                                    + envCamelcase).collect(Collectors.joining(","));
-                                    return "micrc.broker.topics." + entry.getKey() + "=" + values;
+                                    System.out.println("profile......"+ profile);
+                                    Object resourceTopics = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
+                                            "x.content.server.middlewares.broker.profiles." + entry.getKey()+"." + profile + ".resources.topics");
+                                    if (null != resourceTopics) {
+                                        String values = JsonUtil.writeObjectAsList(resourceTopics, String.class).stream().map(m -> IntroJsonParser.topicNameSuffixProfile(m,activeProfile)).collect(Collectors.joining(","));
+                                        return "micrc.broker.topics." + entry.getKey() + "=" + values;
+                                    }
+                                    return null;
                                 })
+                                .filter(instance -> null != instance)
                                 .collect(Collectors.joining("\n"));
+                        System.out.println("activeProfilesMapping: " + activeProfilesMapping);
                     }
                     Files.write(
                         propsFilePath,

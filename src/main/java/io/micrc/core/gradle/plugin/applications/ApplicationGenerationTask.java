@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.CaseFormat;
 import groovy.util.Eval;
 import io.micrc.core.gradle.plugin.domain.DomainGenerationTask;
-import io.micrc.core.gradle.plugin.lib.FreemarkerUtil;
-import io.micrc.core.gradle.plugin.lib.JsonUtil;
-import io.micrc.core.gradle.plugin.lib.SwaggerUtil;
-import io.micrc.core.gradle.plugin.lib.TemplateUtils;
+import io.micrc.core.gradle.plugin.lib.*;
 import io.micrc.core.gradle.plugin.project.SchemaSynchronizeConfigure;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -46,15 +43,8 @@ public class ApplicationGenerationTask {
         return instance;
     }
 
-    private String getActiveProfile(Project project) {
-        if (project.hasProperty("active_profile")) {
-            return (String) project.property("active_profile");
-        }
-        return "default";
-    }
-
     public void generateBusinessService(Project project) {
-        String activeProfile = getActiveProfile(project);
+        String activeProfile = SystemEnv.getActiveProfile(project);
         String envCamelcase = activeProfile.substring(0, 1).toUpperCase() + activeProfile.substring(1);
         Path casesPath = Paths.get(project.getBuildDir() + MICRC_SCHEMA_CASES);
         if (!Files.exists(casesPath)) {
