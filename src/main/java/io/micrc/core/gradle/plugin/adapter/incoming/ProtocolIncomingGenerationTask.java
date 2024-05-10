@@ -96,40 +96,7 @@ public class ProtocolIncomingGenerationTask {
                             + basePackage.replace(".", "/") + "/infrastructure/command/"
                             + aggregationPackage + "/" + logic + "Adapter.java";
                     FreemarkerUtil.generator("BusinessesAdapter", map, fileName);
-                } else if ("LISTENER".equals(portType)) {
-//                    JsonNode listenersNode = metadataNode.at("/listeners");
-//                    if (listenersNode.isArray()) {
-//                        JsonUtil.writeValueAsList(listenersNode.toString(), Object.class)
-//                                .forEach(listener -> {
-//                            String listenerJson = JsonUtil.writeValueAsString(listener);
-//                            // event
-//                            Object event = JsonUtil.readPath(listenerJson, "/event");
-//                            map.put("event", event);
-//                            // topic
-//                            Object topic = JsonUtil.readPath(listenerJson, "/topic");
-//                            map.put("topic", topic);
-//                            String factory = "kafkaListenerContainerFactory";
-//                            if (!"default".equalsIgnoreCase(activeProfile) && !"local".equalsIgnoreCase(activeProfile)) {
-//                                Object contextMeta = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
-//                                        "x.content.server.middlewares.broker.topicProfile");
-//                                if (null != contextMeta) {
-//                                    LazyMap lazyMap = JsonUtil.writeObjectAsObject(contextMeta, LazyMap.class);
-//                                    String provider = lazyMap.entrySet().stream()
-//                                            .filter(entry -> JsonUtil.writeObjectAsList(entry.getValue(), Object.class).contains(topic))
-//                                            .map(Map.Entry::getKey).findFirst().orElseThrow();
-//                                    if (!"public".equalsIgnoreCase(provider)) {
-//                                        factory = factory + "-"  + provider;
-//                                    }
-//                                }
-//                            }
-//                            map.put("factory", factory);
-//                            String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
-//                                    + basePackage.replace(".", "/") + "/infrastructure/message/"
-//                                    + aggregationPackage + "/" + event + logic + "Listener.java";
-//                            FreemarkerUtil.generator("BusinessesListener", map, fileName);
-//                        });
-//                    }
-                } else if ("SCHEDULE".equals(portType)) {
+                }  else if ("SCHEDULE".equals(portType)) {
                     // cron
                     String cron = metadataNode.at("/schedule/cron").textValue();
                     map.put("cron", cron);
@@ -149,58 +116,51 @@ public class ProtocolIncomingGenerationTask {
                 }
             });
         });
-        Object defaultProfileEnv = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
-                "x.content.server.profileEnv");
-        String profile = activeProfile;
-        if (List.of("alpha","beta","ga").contains(activeProfile)) {
-            profile = "prod";
-        } else  if (List.of("default","local").contains(activeProfile)) {
-            profile = (String)defaultProfileEnv;
-        }
-        boolean isGa = "ga".equals(activeProfile);
-        String envCamelcase = activeProfile.substring(0, 1).toUpperCase() + activeProfile.substring(1);
-        Object profiles = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
-                "x.content.server.middlewares.broker.profiles");
-//        if (null != profiles) {
-//            LazyMap lazyMap = JsonUtil.writeObjectAsObject(profiles, LazyMap.class);
-//            lazyMap.forEach((provider,value)-> {
-//                System.out.println("xxxxx....." + "x.content.server.middlewares.broker.profiles." + provider + "." +profile+ ".resources.groups");
-//                Object groups = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
-//                        "x.content.server.middlewares.broker.profiles." + provider + "." +profile+ ".resources.groups");
-//                if (null != groups) {
-//                    System.out.println("groups...."+ groups);
-//                    Map<String,Object> groupsMap =(Map<String,Object>)groups;
-//                    List<String> groupKeys = new ArrayList<>(groupsMap.keySet());
-//                    for (int i = 0; i < groupKeys.size(); i++) {
-//                        String factory = "kafkaListenerContainerFactory";
-//                        String kafkaInstance  = "";
-//                        List<String> contextTopics = ((List<String>)groupsMap.get(groupKeys.get(i)));
-//                        if (!"default".equalsIgnoreCase(activeProfile) && !"local".equalsIgnoreCase(activeProfile)) {
-//                            kafkaInstance = "public";
-//                            if (!"public".equalsIgnoreCase(provider)) {
-//                                factory = factory + "-"  + provider;
-//                            }
-//                        }
-//                        String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
-//                                + basePackage.replace(".", "/") + "/infrastructure/message/"
-//                                + "test".toLowerCase() + "/" + "Test" +provider+kafkaInstance.toLowerCase()+i+ "Listener.java";
-//                        List<String> topics = contextTopics.stream().map(topic -> isGa ? topic : topic+envCamelcase).collect(Collectors.toList());
-//                        Map<String,Object> listenerMap = Map.of(
-//                                "topics", topics,
-//                                "services", Arrays.asList(),//valueMap.get("services"),
-//                                "groupId", groupKeys.get(i)+(isGa ?  "": "_"+activeProfile),//valueMap.get("groupId")+(isGa ?  "": "_"+activeProfile),
-//                                "factory", factory,
-//                                "basePackage", basePackage,
-//                                "aggregationPackage", "test",
-//                                "activeProfile", isGa? "": envCamelcase,
-//                                "name", "Test" +provider+kafkaInstance.toLowerCase()+i+ "Listener"
-//
-//                        );
-//                        FreemarkerUtil.generator("BusinessesListener", listenerMap, fileName);
-//                    }
-//                }
-//            });
-//        }
+
+        JsonPathContext jsonPathContext = new JsonPathContext(SchemaSynchronizeConfigure.metaData.get("contextMeta"));
+        LazyMap profiles = jsonPathContext.getMap("server.middlewares.broker.profiles");
+        String env = IntroJsonParser.getIntroJsonProfile(project);
+        profiles.forEach((provider,instance) -> {
+            LazyMap groups = jsonPathContext.getMap("server.middlewares.broker.profiles.{provider}.{env}.applications.groups", provider,env);
+
+            groups.forEach((key, value)-> {
+                List<Map<String,Object>> valueList = (List<Map<String,Object>>) value;
+                int i = 0;
+                for (Map<String,Object> valueMap : valueList) {
+                    String factory = "kafkaListenerContainerFactory";
+                    String kafkaInstance  = "";
+                    if (!List.of("default", "local").contains(activeProfile)) {
+                        kafkaInstance = "public";
+                        if (!"public".equalsIgnoreCase(provider)) {
+                            factory = factory + "-"  + provider;
+                        }
+                    }
+                    String fileName = JsonPathContext.path(
+                            "{buildProjectDir}/src/main/java/{basePackage}/infrastructure/message/{eventTopic}/{upperEventTopic}{provider}{i}Listener.java",
+                            project.getProjectDir().getAbsolutePath(),
+                            basePackage.replace(".", "/"),
+                            key.toLowerCase(),
+                            IntroJsonParser.uppercase(key),
+                            IntroJsonParser.uppercase(kafkaInstance),
+                            i+"");
+                    List<String> topics = ((List<String>) valueMap.get("topics")).stream().map(topic -> IntroJsonParser.topicNameSuffixProfile(topic,activeProfile)).collect(Collectors.toList());
+                    Map<String,Object> listenerMap = Map.of(
+                            "topics", topics,
+                            "services", valueMap.get("services"),
+                            "groupId", valueMap.get("groupId")+("ga".equals(activeProfile) ? "": "_" +activeProfile),
+                            "factory", factory,
+                            "basePackage", basePackage,
+                            "aggregationPackage", key.toLowerCase(),
+                            "activeProfile", IntroJsonParser.uppercase(activeProfile),
+                            "name", IntroJsonParser.uppercase(key) +IntroJsonParser.uppercase(kafkaInstance)+i+ "Listener"
+
+                    );
+                    FreemarkerUtil.generator("BusinessesListener", listenerMap, fileName);
+                    i++;
+                }
+            });
+        });
+
     }
 
     private String spliceMappingPath(String fileName, String aggregationCode) {

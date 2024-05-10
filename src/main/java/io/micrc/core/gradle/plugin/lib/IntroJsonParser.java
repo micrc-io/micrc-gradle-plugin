@@ -22,6 +22,13 @@ public class IntroJsonParser {
         return prod.contains(profile);
     }
 
+    public static String uppercase(String val) {
+        if (val.isEmpty()) {
+            return val;
+        }
+        return val.substring(0, 1).toUpperCase() + val.substring(1);
+    }
+
     // get intro.json profile
     public static String getIntroJsonProfile(Project project) {
         String envProfile = SystemEnv.getActiveProfile(project);
@@ -29,16 +36,12 @@ public class IntroJsonParser {
             // intro.json only profile is prod for alpha,beta,ga
             return "prod";
         }
-        //TODO csyang keep default profile run ok
-        if (noTemplate.contains(envProfile)) {
-            return "dev";
-        }
-        return envProfile;
+       return envProfile;
     }
 
     // topic name suffix
     public static String topicNameSuffixProfile(String topicName,String profile) {
-        String envCamelcase = profile.substring(0, 1).toUpperCase() + profile.substring(1);
+        String envCamelcase = uppercase(profile);
         // prod ga env need topic suffix  and no profile template
         if("ga".equals(profile) || noTemplate.contains(profile)) {
             return topicName;

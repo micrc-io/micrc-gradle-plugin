@@ -192,7 +192,7 @@ public class ManifestsGenerationTask {
                 if (null == activeProfileKey) {
                     return;
                 }
-                System.out.println("keyss......" + activeProfileKey);
+
                 String profilePropertiesKey = middleware + "_properties_" + activeProfileKey;
                 profilesData.putIfAbsent(profilePropertiesKey, "");
                 Map<String, Object> profile = (Map<String, Object>) profiles.get(profileKey);

@@ -212,7 +212,6 @@ public class ProjectConfigure {
                         LazyMap lazyMap = JsonUtil.writeObjectAsObject(profiles, LazyMap.class);
                         activeProfilesMapping = lazyMap.entrySet().stream()
                                 .map(entry -> {
-                                    System.out.println("profile......"+ profile);
                                     Object resourceTopics = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
                                             "x.content.server.middlewares.broker.profiles." + entry.getKey()+"." + profile + ".resources.topics");
                                     if (null != resourceTopics) {
@@ -223,7 +222,6 @@ public class ProjectConfigure {
                                 })
                                 .filter(instance -> null != instance)
                                 .collect(Collectors.joining("\n"));
-                        System.out.println("activeProfilesMapping: " + activeProfilesMapping);
                     }
                     Files.write(
                         propsFilePath,
