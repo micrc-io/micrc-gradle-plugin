@@ -1,5 +1,6 @@
 package ${basePackage}.infrastructure.runner.${aggregationPackage};
 
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import io.micrc.core.annotations.integration.runner.RunnerAdapter;
 import io.micrc.core.annotations.integration.runner.RunnerExecution;
 import org.springframework.boot.ApplicationArguments;
@@ -21,6 +22,7 @@ public interface ${logic}Runner extends ApplicationRunner {
         @Override
         @Transactional
         @RunnerExecution
+        @SchedulerLock(name = "${logic}Runner")
         public void run(ApplicationArguments args) throws Exception {
 
         }
