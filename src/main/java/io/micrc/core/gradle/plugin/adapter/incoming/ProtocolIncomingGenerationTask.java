@@ -128,7 +128,7 @@ public class ProtocolIncomingGenerationTask {
                 int i = 0;
                 for (Map<String,Object> valueMap : valueList) {
                     String factory = "kafkaListenerContainerFactory";
-                    if (!List.of("default", "local").contains(activeProfile)) {
+                    if (!"public".contains(provider)) {
                         factory = factory + "-"  + provider;
                     }
                     String fileName = JsonPathContext.path(
@@ -143,7 +143,7 @@ public class ProtocolIncomingGenerationTask {
                     List<Map<String,Object>> services = ((List<Map<String,Object>>) valueMap.get("services")).stream().map(service -> {
                         Map<String, Object> newMap = new HashMap<>(service);
                         newMap.put("topic",IntroJsonParser.topicNameSuffixProfile((String)service.get("topic"),activeProfile));
-                        System.out.println("newMap: " + newMap);
+
                         return newMap;
                     }).collect(Collectors.toList());
                     Map<String,Object> listenerMap = Map.of(
