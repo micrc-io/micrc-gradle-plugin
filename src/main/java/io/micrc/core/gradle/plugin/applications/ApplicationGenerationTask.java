@@ -91,7 +91,7 @@ public class ApplicationGenerationTask {
                         String evenJson = JsonUtil.writeValueAsString(even);
                         HashMap<String, Object> e = new HashMap<>();
                         e.put("event", JsonUtil.readPath(evenJson, "/event"));
-                        e.put("topic", JsonUtil.readPath(evenJson, "/topic"));
+                        e.put("topic", IntroJsonParser.topicNameSuffixProfile((String)JsonUtil.readPath(evenJson, "/topic"),activeProfile));
                         List<Object> mappings = (List) JsonUtil.readPath(evenJson, "/mappings");
                         if (mappings == null) {
                             return null;

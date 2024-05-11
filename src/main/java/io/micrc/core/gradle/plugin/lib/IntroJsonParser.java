@@ -41,12 +41,16 @@ public class IntroJsonParser {
 
     // topic name suffix
     public static String topicNameSuffixProfile(String topicName,String profile) {
+        return nameSuffix(topicName, profile, false, "");
+    }
+
+    // topic name suffix
+    public static String nameSuffix(String name,String profile, boolean isOriginSuffix, String split) {
         String envCamelcase = uppercase(profile);
-        // prod ga env need topic suffix  and no profile template
-        if("ga".equals(profile) || noTemplate.contains(profile)) {
-            return topicName;
+        if (List.of("alpha","beta").contains(profile)) {
+            return name+ split + (isOriginSuffix? profile: envCamelcase);
         }
-        return topicName+envCamelcase;
+        return name;
     }
 
     // get profile to  gen snips/*/tmpl
