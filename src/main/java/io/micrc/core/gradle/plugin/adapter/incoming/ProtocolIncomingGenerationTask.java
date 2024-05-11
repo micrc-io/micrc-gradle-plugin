@@ -128,12 +128,8 @@ public class ProtocolIncomingGenerationTask {
                 int i = 0;
                 for (Map<String,Object> valueMap : valueList) {
                     String factory = "kafkaListenerContainerFactory";
-                    String kafkaInstance  = "";
                     if (!List.of("default", "local").contains(activeProfile)) {
-                        kafkaInstance = "public";
-                        if (!"public".equalsIgnoreCase(provider)) {
-                            factory = factory + "-"  + provider;
-                        }
+                        factory = factory + "-"  + provider;
                     }
                     String fileName = JsonPathContext.path(
                             "{buildProjectDir}/src/main/java/{basePackage}/infrastructure/message/{eventTopic}/{upperEventTopic}{provider}{i}Listener.java",
@@ -141,18 +137,24 @@ public class ProtocolIncomingGenerationTask {
                             basePackage.replace(".", "/"),
                             key.toLowerCase(),
                             IntroJsonParser.uppercase(key),
-                            IntroJsonParser.uppercase(kafkaInstance),
+                            IntroJsonParser.uppercase(provider),
                             i+"");
                     List<String> topics = ((List<String>) valueMap.get("topics")).stream().map(topic -> IntroJsonParser.topicNameSuffixProfile(topic,activeProfile)).collect(Collectors.toList());
+                    List<Map<String,Object>> services = ((List<Map<String,Object>>) valueMap.get("services")).stream().map(service -> {
+                        Map<String, Object> newMap = new HashMap<>(service);
+                        newMap.put("topic",IntroJsonParser.topicNameSuffixProfile((String)service.get("topic"),activeProfile));
+                        System.out.println("newMap: " + newMap);
+                        return newMap;
+                    }).collect(Collectors.toList());
                     Map<String,Object> listenerMap = Map.of(
                             "topics", topics,
-                            "services", valueMap.get("services"),
-                            "groupId", valueMap.get("groupId")+("ga".equals(activeProfile) ? "": "_" +activeProfile),
+                            "services", services,
+                            "groupId", IntroJsonParser.nameSuffix((String)valueMap.get("groupId"),activeProfile,true,"_"),
                             "factory", factory,
                             "basePackage", basePackage,
                             "aggregationPackage", key.toLowerCase(),
                             "activeProfile", IntroJsonParser.uppercase(activeProfile),
-                            "name", IntroJsonParser.uppercase(key) +IntroJsonParser.uppercase(kafkaInstance)+i+ "Listener"
+                            "name", IntroJsonParser.uppercase(key) +IntroJsonParser.uppercase(provider)+i+ "Listener"
 
                     );
                     FreemarkerUtil.generator("BusinessesListener", listenerMap, fileName);

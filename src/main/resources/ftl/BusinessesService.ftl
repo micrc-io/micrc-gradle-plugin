@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 <#if events??>
 <#list events as event>
     @Event(
-        topicName = "${event.topic}${activeProfile}",
+        topicName = "${event.topic}",
         eventName = "${event.event}",
         mappings = {
     <#if event.mappings??>
