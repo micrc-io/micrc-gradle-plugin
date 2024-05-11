@@ -2,7 +2,9 @@ package io.micrc.core.gradle.plugin.lib;
 
 import org.gradle.api.Project;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class IntroJsonParser {
     // prod env
@@ -72,6 +74,14 @@ public class IntroJsonParser {
             return null;
         }
         return getProfileBetweenIntroJsonAndEnvProfile(introJsonProfile,envProfile);
+    }
+
+    public static Map<String,String> listMapToValuesMap(List<Map> list, String sourceKey, String targetKey) {
+        Map<String,String> map = new HashMap<>();
+        list.forEach(l-> {
+            map.put((String)l.get(sourceKey),(String)l.get(targetKey));
+        });
+        return map;
     }
 
 }

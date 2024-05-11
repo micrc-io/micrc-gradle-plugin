@@ -10,6 +10,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.groovy.json.internal.LazyMap;
 import org.gradle.api.Project;
 
 import java.io.File;
@@ -45,8 +46,10 @@ public class ApplicationGenerationTask {
 
     public void generateBusinessService(Project project) {
         String activeProfile = SystemEnv.getActiveProfile(project);
-        String envCamelcase = activeProfile.substring(0, 1).toUpperCase() + activeProfile.substring(1);
+        String envCamelcase = IntroJsonParser.uppercase(activeProfile);
+        String env = IntroJsonParser.getIntroJsonProfile(project);
         Path casesPath = Paths.get(project.getBuildDir() + MICRC_SCHEMA_CASES);
+        Map<String, String> migrateMapper = getTopicMigrateMapper(env);
         if (!Files.exists(casesPath)) {
             return;
         }
@@ -85,13 +88,18 @@ public class ApplicationGenerationTask {
                 JsonNode metadataNode = JsonUtil.readTree(metadata);
                 // event
                 JsonNode eventsNode = metadataNode.at("/events");
+                JsonPathContext jsonPathContext = new JsonPathContext(SchemaSynchronizeConfigure.metaData.get("contextMeta"));
                 if (eventsNode.isArray()) {
                     Object eventResult = JsonUtil.writeValueAsList(eventsNode.toString(), Object.class)
                             .stream().map(even -> {
                         String evenJson = JsonUtil.writeValueAsString(even);
                         HashMap<String, Object> e = new HashMap<>();
                         e.put("event", JsonUtil.readPath(evenJson, "/event"));
-                        e.put("topic", IntroJsonParser.topicNameSuffixProfile((String)JsonUtil.readPath(evenJson, "/topic"),activeProfile));
+
+                        String originTopic = (String)JsonUtil.readPath(evenJson, "/topic");
+                        // topic 迁移
+                        String migrateTopic = migrateMapper.getOrDefault(originTopic, originTopic);
+                        e.put("topic", IntroJsonParser.topicNameSuffixProfile(migrateTopic,activeProfile));
                         List<Object> mappings = (List) JsonUtil.readPath(evenJson, "/mappings");
                         if (mappings == null) {
                             return null;
@@ -499,6 +507,21 @@ public class ApplicationGenerationTask {
                 FreemarkerUtil.generator("DerivationsService", map, fileName);
             });
         });
+    }
+
+    private Map<String,String> getTopicMigrateMapper(String env) {
+        JsonPathContext jsonPathContext = new JsonPathContext(SchemaSynchronizeConfigure.metaData.get("contextMeta"));
+        LazyMap profiles = jsonPathContext.getMap("server.middlewares.broker.profiles");
+        Map<String,String> map = new HashMap<>();
+        profiles.forEach((provider, value) -> {
+            List<String> topics = jsonPathContext.getListString("server.middlewares.broker.profiles.{provider}.{env}.resources.topics",provider,env);
+            List<Map> topicsMigrate = jsonPathContext.getListMap("server.middlewares.broker.profiles.{provider}.{env}.applications.topicsMigrate",provider,env);
+            if (null != topics && null != topicsMigrate) {
+                Map<String,String> topicMap = IntroJsonParser.listMapToValuesMap(topicsMigrate, "sourceTopic", "targetTopic");
+                map.putAll(topicMap);
+            }
+        });
+        return map;
     }
 
 }

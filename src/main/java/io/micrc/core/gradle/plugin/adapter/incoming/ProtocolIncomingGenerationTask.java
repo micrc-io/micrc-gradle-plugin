@@ -121,6 +121,10 @@ public class ProtocolIncomingGenerationTask {
         LazyMap profiles = jsonPathContext.getMap("server.middlewares.broker.profiles");
         String env = IntroJsonParser.getIntroJsonProfile(project);
         profiles.forEach((provider,instance) -> {
+            // in default env, only provider eq public support
+            if (activeProfile.equals("default") && !"public".equals(provider)) {
+                return;
+            }
             LazyMap groups = jsonPathContext.getMap("server.middlewares.broker.profiles.{provider}.{env}.applications.groups", provider,env);
 
             groups.forEach((key, value)-> {
@@ -128,7 +132,7 @@ public class ProtocolIncomingGenerationTask {
                 int i = 0;
                 for (Map<String,Object> valueMap : valueList) {
                     String factory = "kafkaListenerContainerFactory";
-                    if (!"public".contains(provider)) {
+                    if (!"public".equalsIgnoreCase(provider)) {
                         factory = factory + "-"  + provider;
                     }
                     String fileName = JsonPathContext.path(

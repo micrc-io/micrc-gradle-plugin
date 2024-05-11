@@ -212,6 +212,10 @@ public class ProjectConfigure {
                         LazyMap lazyMap = JsonUtil.writeObjectAsObject(profiles, LazyMap.class);
                         activeProfilesMapping = lazyMap.entrySet().stream()
                                 .map(entry -> {
+                                    // env default only support public topics
+                                    if (activeProfile.equals("default") && !"public".equals(entry.getKey())) {
+                                        return null;
+                                    }
                                     Object resourceTopics = Eval.x(SchemaSynchronizeConfigure.metaData.get("contextMeta"),
                                             "x.content.server.middlewares.broker.profiles." + entry.getKey()+"." + profile + ".resources.topics");
                                     if (null != resourceTopics) {

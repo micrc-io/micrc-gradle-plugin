@@ -5,6 +5,7 @@ import io.micrc.core.gradle.plugin.project.SchemaSynchronizeConfigure;
 import org.apache.groovy.json.internal.LazyMap;
 
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,13 +43,22 @@ public class JsonPathContext {
         return JsonUtil.writeObjectAsObject(object, LazyMap.class);
     }
 
-    public List<?> getList(String path) {
+    public List<Map> getListMap(String path) {
         Object object = get(path);
-        return JsonUtil.writeObjectAsList(object, List.class);
+        return JsonUtil.writeObjectAsList(object, Map.class);
     }
 
-    public List<?> getList(String path, String... args) {
+    public List<Map> getListMap(String path, String... args) {
         Object object = get(path, args);
-        return JsonUtil.writeObjectAsList(object, List.class);
+        return JsonUtil.writeObjectAsList(object, Map.class);
+    }
+    public List<String> getListString(String path) {
+        Object object = get(path);
+        return JsonUtil.writeObjectAsList(object, String.class);
+    }
+
+    public List<String> getListString(String path, String... args) {
+        Object object = get(path, args);
+        return JsonUtil.writeObjectAsList(object, String.class);
     }
 }
