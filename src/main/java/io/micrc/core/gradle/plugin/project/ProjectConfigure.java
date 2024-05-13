@@ -6,6 +6,7 @@ import io.micrc.core.gradle.plugin.lib.JsonUtil;
 import io.micrc.core.gradle.plugin.lib.SystemEnv;
 import io.micrc.core.gradle.plugin.lib.TemplateUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.groovy.json.internal.LazyMap;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
@@ -220,6 +221,9 @@ public class ProjectConfigure {
                                             "x.content.server.middlewares.broker.profiles." + entry.getKey()+"." + profile + ".resources.topics");
                                     if (null != resourceTopics) {
                                         String values = JsonUtil.writeObjectAsList(resourceTopics, String.class).stream().map(m -> IntroJsonParser.topicNameSuffixProfile(m,activeProfile)).collect(Collectors.joining(","));
+                                        if (StringUtils.isEmpty(values)) {
+                                            return null;
+                                        }
                                         return "micrc.broker.topics." + entry.getKey() + "=" + values;
                                     }
                                     return null;
