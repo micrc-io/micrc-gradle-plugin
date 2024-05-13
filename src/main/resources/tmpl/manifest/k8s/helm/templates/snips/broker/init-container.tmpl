@@ -7,13 +7,11 @@
               providers=\${BROKER_PROVIDERS//,/ };
               for provider in \${providers[@]};
               do
-                BROKER_HOST_KEY="\$provider"_"\$BROKER_HOST_KEY_SUFFIX"
-                BROKER_HOST=\${!BROKER_HOST_KEY}
-                BROKER_PORT_KEY="\$provider"_"\$BROKER_PORT_KEY_SUFFIX"
-                BROKER_PORT=\${!BROKER_PORT_KEY}
+                BROKER_SERVERS_KEY="\$provider"_"\$BROKER_SERVERS_KEY"
+                BROKER_SERVERS=\${!BROKER_SERVERS_KEY}
 
-                if [ \$BROKER_HOST ] && [ \$BROKER_PORT ]; then
-                  until kafkacat -L -b \$BROKER_HOST:\$BROKER_PORT > /dev/null 2>&1 ; do echo waiting for broker; sleep 2; done;
+                if [ \$BROKER_SERVERS ]; then
+                  until kafkacat -L -b \$BROKER_SERVERS > /dev/null 2>&1 ; do echo waiting for broker; sleep 2; done;
                 fi
               done;
           envFrom:
@@ -22,10 +20,8 @@
           env:
             - name: BROKER_PROVIDERS
               value: {{ .Values.broker.brokerProviders }}
-            - name: BROKER_HOST_KEY_SUFFIX
-              value: {{ .Values.broker.brokerHostKeySuffix }}
-            - name: BROKER_PORT_KEY_SUFFIX
-              value: {{ .Values.broker.brokerPortKeySuffix }}
+            - name: BROKER_SERVERS_KEY
+              value: {{ .Values.broker.brokerServersSuffix }}
         - name: broker-topics-init
           image: bitnami/kafka:3.3.1-debian-11-r22
           command:
@@ -35,18 +31,16 @@
               providers=\${BROKER_PROVIDERS//,/ };
               for provider in \${providers[@]};
               do
-                BROKER_HOST_KEY="\$provider"_"\$BROKER_HOST_KEY_SUFFIX"
-                BROKER_HOST=\${!BROKER_HOST_KEY}
-                BROKER_PORT_KEY="\$provider"_"\$BROKER_PORT_KEY_SUFFIX"
-                BROKER_PORT=\${!BROKER_PORT_KEY}
+                BROKER_SERVERS_KEY="\$provider"_"\$BROKER_SERVERS_KEY"
+                BROKER_SERVERS=\${!BROKER_SERVERS_KEY}
                 BROKER_TOPICS_KEY="\$provider"_"\$BROKER_TOPICS_KEY_SUFFIX"
                 BROKER_TOPICS=\${!BROKER_TOPICS_KEY}
 
-                if [ \$BROKER_HOST ] && [ \$BROKER_PORT ]; then
+                if [ \$BROKER_SERVERS ]; then
                   topics=\${BROKER_TOPICS//,/ };
                   for topic in \${topics[@]};
                   do
-                    until /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server \$BROKER_HOST:\$BROKER_PORT --describe --topic \$topic > /dev/null 2>&1 ;
+                    until /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server \$BROKER_SERVERS --describe --topic \$topic > /dev/null 2>&1 ;
                     do
                       echo waiting for broker topic: \$topic creation; sleep 2;
                     done;
@@ -56,9 +50,7 @@
           env:
             - name: BROKER_PROVIDERS
               value: {{ .Values.broker.brokerProviders }}
-            - name: BROKER_HOST_KEY_SUFFIX
-              value: {{ .Values.broker.brokerHostKeySuffix }}
-            - name: BROKER_PORT_KEY_SUFFIX
-              value: {{ .Values.broker.brokerPortKeySuffix }}
+            - name: BROKER_SERVERS_KEY
+              value: {{ .Values.broker.brokerServersSuffix }}
             - name: BROKER_TOPICS_KEY_SUFFIX
               value: {{ .Values.broker.brokerTopicsKeySuffix }}

@@ -1,7 +1,6 @@
 package io.micrc.core.gradle.plugin.lib;
 
 import groovy.util.Eval;
-import io.micrc.core.gradle.plugin.project.SchemaSynchronizeConfigure;
 import org.apache.groovy.json.internal.LazyMap;
 
 import java.util.List;

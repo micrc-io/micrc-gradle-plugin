@@ -206,7 +206,6 @@ public class ManifestsGenerationTask {
                         profileData += provider + "_" + middleware + "_" + prop + ": " + instance.get(prop);
                         profilesData.put(profilePropertiesKey, profileData);
                     });
-
                     // gen template broker topics
                     Map<String,Object> resources = (Map<String,Object>)profile.get("resources");
                     if (resources != null) {
@@ -220,7 +219,7 @@ public class ManifestsGenerationTask {
                             Function<String,String> topicSuffix = topic -> IntroJsonParser.topicNameSuffixProfile(topic,activeProfileKey);
                             String newTopics = topics.stream().map(topicSuffix).collect(Collectors.joining(","));
                             if (!newTopics.isEmpty()) {
-                                brokerProperties+= "\n    "+provider + "_broker_topics: "+ newTopics;
+                                brokerProperties+= "\n      "+provider + "_broker_topics: "+ newTopics;
                             }
                             profilesData.put(profileBrokerKey, brokerProperties);
                         }
