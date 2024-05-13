@@ -16,12 +16,11 @@ pipeline {
     )
   }
   environment {
-    tag='${version}'
-    git_credential='github-repo-admin'
-    registry_credential='registry-admin'
-    docker_registry='${registry}'
-    gitops_repo='${gitopsRepo}'
-    proxy_host='${proxyServer}';
+    TAG='${version}'
+    GIT_CREDENTIAL='github-repo-admin'
+    REGISTRY_CREDENTIAL='registry-admin'
+    DOCKER_REGISTRY='${registry}'
+    GITOPS_REPO='${gitopsRepo}'
   }
 
   stages {
@@ -33,7 +32,7 @@ pipeline {
         container('micrc') {
           sh "git checkout \$COMMIT"
           dir("${serviceName}") {
-            sh 'if [ -z "\$PROXY_HOST" ];then ./gradlew -PBUILD_ENV="production" clean; else ./gradlew -Dhttps.proxyHost=${proxyServer} -Dhttps.proxyPort=${proxyPort} -Dhttp.nonProxyHosts=${noProxyRepo} -PBUILD_ENV="production" clean; fi'
+            sh './gradlew -Dhttps.proxyHost=${proxyServer} -Dhttps.proxyPort=${proxyPort} -Dhttp.nonProxyHosts=${noProxyRepo} -PBUILD_ENV="production" clean'
           }
           dir("${logicName}") {
             sh 'mvn clean package -q'

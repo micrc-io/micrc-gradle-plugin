@@ -16,11 +16,11 @@ pipeline {
     )
   }
   environment {
-    tag='${version}'
-    git_credential='github-repo-admin'
-    registry_credential='registry-admin'
-    docker_registry='${registry}'
-    gitops_repo='${gitopsRepo}'
+    TAG='${version}'
+    GIT_CREDENTIAL='github-repo-admin'
+    REGISTRY_CREDENTIAL='registry-admin'
+    DOCKER_REGISTRY='${registry}'
+    GITOPS_REPO='${gitopsRepo}'
   }
 
   stages {

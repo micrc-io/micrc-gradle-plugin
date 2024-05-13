@@ -37,7 +37,7 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.serviceRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          args: ["production"]
+          args: ["release"]
           env:
             - name: BROKER_PROVIDERS
               value: {{ .Values.broker.brokerProviders }}

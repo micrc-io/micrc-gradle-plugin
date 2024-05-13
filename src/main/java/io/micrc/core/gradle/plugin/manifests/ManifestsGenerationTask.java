@@ -11,6 +11,8 @@ import org.gradle.api.Project;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ManifestsGenerationTask {
@@ -204,10 +206,31 @@ public class ManifestsGenerationTask {
                         profileData += provider + "_" + middleware + "_" + prop + ": " + instance.get(prop);
                         profilesData.put(profilePropertiesKey, profileData);
                     });
+
+                    // gen template broker topics
+                    Map<String,Object> resources = (Map<String,Object>)profile.get("resources");
+                    if (resources != null) {
+                        List<String> topics = (List<String>)resources.get("topics");
+                        if (topics != null) {
+                            String profileBrokerKey = middleware + "_template_" + activeProfileKey;
+                            String brokerProperties = profilesData.get(profileBrokerKey);
+                            if (null == brokerProperties) {
+                                brokerProperties="";
+                            }
+                            Function<String,String> topicSuffix = topic -> IntroJsonParser.topicNameSuffixProfile(topic,activeProfileKey);
+                            String newTopics = topics.stream().map(topicSuffix).collect(Collectors.joining(","));
+                            if (!newTopics.isEmpty()) {
+                                brokerProperties+= "\n    "+provider + "_broker_topics: "+ newTopics;
+                            }
+                            profilesData.put(profileBrokerKey, brokerProperties);
+                        }
+                    }
+
                     if (!instance.keySet().isEmpty()) {
                         profileSet.add(activeProfileKey);
                     }
                 }
+
             });
         });
         ctx.putAll(profilesData);

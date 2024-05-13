@@ -64,8 +64,8 @@ resources: {}
   #   memory: 128Mi
 
 autoscaling:
-  enabled: true
-  minReplicas: 3
+  enabled: false
+  minReplicas: 2
   # 弹性池
   maxReplicas: 10
   targetCPUUtilizationPercentage: 80
