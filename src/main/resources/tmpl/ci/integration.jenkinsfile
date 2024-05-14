@@ -14,6 +14,11 @@ pipeline {
       choices: ['no-deploy', 'dev', 'ver', 'acc'],
       description: 'deploy profile'
     )
+    booleanParam(
+      name: "deploy",
+      defaultValue: false,
+      description: "is deploy"
+    )
   }
   environment {
     TAG='${version}'
