@@ -57,7 +57,7 @@ pipeline {
           script {
             dockerHost = sh(
               returnStdout: true,
-              script: "echo tcp://\${DOCKER_HOST_IP}:\${DOCKER_HOST_PORT}"
+              script: 'echo tcp://\${DOCKER_HOST_IP}:\${DOCKER_HOST_PORT}'
             ).trim()
           }
         }
@@ -68,7 +68,7 @@ pipeline {
         label 'micrc'
       }
       stages {
-        stage("${contextName} - Build") {
+        stage('${contextName} - Build') {
           when {
               expression { params.commit != '' }
           }
@@ -96,7 +96,7 @@ pipeline {
             }
           }
         }
-        stage("${contextName} - Functional Verification") {
+        stage('${contextName} - Functional Verification') {
           when {
             expression { params.functional == true }
           }
@@ -104,7 +104,7 @@ pipeline {
             println 'Not Ready...'
           }
         }
-        stage("${contextName} - Security Verification") {
+        stage('${contextName} - Security Verification') {
           when {
             expression { params.security == true }
           }
@@ -112,7 +112,7 @@ pipeline {
             println 'Not Ready...'
           }
         }
-        stage("${contextName} - Stress Verification") {
+        stage('${contextName} - Stress Verification') {
           when {
             expression { params.stress == true }
           }
@@ -120,7 +120,7 @@ pipeline {
             println 'Not Ready...'
           }
         }
-        stage("${contextName} - Robustness Verification") {
+        stage('${contextName} - Robustness Verification') {
           when {
             expression { params.robustness == true }
           }
@@ -128,7 +128,7 @@ pipeline {
             println 'Not Ready...'
           }
         }
-        stage("${contextName} - Deployment") {
+        stage('${contextName} - Deployment') {
           when {
             expression { params.deploy == true }
           }
@@ -148,7 +148,7 @@ pipeline {
                 dir("../"){
                   sh "chmod 777 -R ."
                   withCredentials([usernamePassword(credentialsId: "\$GIT_CREDENTIAL", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-                    sh "export https_proxy= && git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@\$GITOPS_REPO gitops"
+                    sh 'export https_proxy= && git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@\$GITOPS_REPO gitops'
                   }
                 }
                 sh "mkdir -p ../gitops/profiles/\$PROFILE/${contextName}"
