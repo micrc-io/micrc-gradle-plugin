@@ -1,23 +1,45 @@
+def dockerHost
+
 pipeline {
   options {
     overrideIndexTriggers(false)
   }
   agent {
     node {
-      label 'micrc'
+      label 'micrc-dind'
     }
   }
   parameters {
     string(name: 'commit', defaultValue: '', description: 'git commit num')
     choice(
       name: 'profile',
-      choices: ['no-deploy', 'alpha', 'beta', 'ga'],
+      choices: ['alpha', 'beta', 'release'],
       description: 'deploy profile'
     )
     booleanParam(
-        name: "deploy",
-        defaultValue: false,
-        description: "is deploy"
+      name: 'deploy',
+      defaultValue: true,
+      description: 'is deploy'
+    )
+    booleanParam(
+      name: 'functional',
+      defaultValue: false,
+      description: 'is functional verification'
+    )
+    booleanParam(
+      name: 'security',
+      defaultValue: false,
+      description: 'is security verification'
+    )
+    booleanParam(
+      name: 'stress',
+      defaultValue: false,
+      description: 'is stress verification'
+    )
+    booleanParam(
+      name: 'robustness',
+      defaultValue: false,
+      description: 'is robustness verification'
     )
   }
   environment {
@@ -29,60 +51,116 @@ pipeline {
   }
 
   stages {
-    stage('${contextName} - production') {
-      when {
-          expression { params.commit != '' }
-      }
+    stage('Prepare Docker Daemon') {
       steps {
-        container('micrc') {
-          sh "git checkout \$COMMIT"
-          dir("${serviceName}") {
-            sh './gradlew -Dhttps.proxyHost=${proxyServer} -Dhttps.proxyPort=${proxyPort} -Dhttp.nonProxyHosts=${noProxyRepo} -PBUILD_ENV="production" clean'
-          }
-          dir("${logicName}") {
-            sh 'mvn clean package -q'
-          }
-          dir("${serviceName}") {
-            sh "export TAG=\$TAG && skaffold build -p \$PROFILE --default-repo=\$DOCKER_REGISTRY"
-          }
-          withCredentials([usernamePassword(credentialsId: "\$REGISTRY_CREDENTIAL", passwordVariable: 'REGISTRY_PASSWORD', usernameVariable: 'REGISTRY_USERNAME')]) {
-            sh "docker login -u \$REGISTRY_USERNAME -p \$REGISTRY_PASSWORD \$DOCKER_REGISTRY"
-            sh "docker push \$DOCKER_REGISTRY/${serviceName}:\$TAG"
-            sh "docker push \$DOCKER_REGISTRY/${logicName}:\$TAG"
+        container('micrc-dind') {
+          script {
+            dockerHost = sh(
+              returnStdout: true,
+              script: "echo tcp://\${DOCKER_HOST_IP}:\${DOCKER_HOST_PORT}"
+            ).trim()
           }
         }
       }
     }
-    stage('${contextName} - deployment') {
-      when {
-        expression { params.profile != 'no-deploy' }
+    stage('Execution') {
+      agent {
+        label 'micrc'
       }
-      steps {
-        container('micrc') {
-          withCredentials([usernamePassword(credentialsId: "\$REGISTRY_CREDENTIAL", passwordVariable: 'REGISTRY_PASSWORD', usernameVariable: 'REGISTRY_USERNAME')]) {
-            sh "docker login -u \$REGISTRY_USERNAME -p \$REGISTRY_PASSWORD \$DOCKER_REGISTRY"
+      stages {
+        stage("${contextName} - Build") {
+          when {
+              expression { params.commit != '' }
           }
-          dir("${serviceName}") {
-            sh 'gradle -PBUILD_ENV="production" clean'
-            sh 'gradle -PBUILD_ENV="production" processResources'
-            sh "/bin/cp ~/.docker/config.json ./build/micrc/manifests/k8s/kustomize/docker-config.json"
-            sh "export TAG=\$TAG && skaffold render -p \$PROFILE --digest-source=tag --default-repo=\$DOCKER_REGISTRY > ${contextName}-manifest.yaml"
-          }
-          lock("micrc-gitops") {
-            dir("../"){
-              sh "chmod 777 -R ."
-              withCredentials([usernamePassword(credentialsId: "\$GIT_CREDENTIAL", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-                sh 'if [ -z "\$PROXY_HOST" ];then export https_proxy=${proxyServerUrl} && git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@\$GITOPS_REPO gitops; else git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@\$GITOPS_REPO gitops; fi'
+          steps {
+            script {
+              env.DOCKER_HOST=dockerHost
+            }
+            container('micrc') {
+              sh 'git config --global --add safe.directory "*"'
+              sh "git checkout \$COMMIT"
+              dir("${serviceName}") {
+                sh './gradlew -Dhttps.proxyHost=${proxyServer} -Dhttps.proxyPort=${proxyPort} -Dhttp.nonProxyHosts=${noProxyRepo} -PBUILD_ENV="production" clean'
+              }
+              dir("${logicName}") {
+                sh './mvnw clean package -q'
+              }
+              dir("${serviceName}") {
+                sh "export TAG=\$TAG && skaffold build -p \$PROFILE --default-repo=\$DOCKER_REGISTRY"
+              }
+              withCredentials([usernamePassword(credentialsId: "\$REGISTRY_CREDENTIAL", passwordVariable: 'REGISTRY_PASSWORD', usernameVariable: 'REGISTRY_USERNAME')]) {
+                sh "docker login -u \$REGISTRY_USERNAME -p \$REGISTRY_PASSWORD \$DOCKER_REGISTRY"
+                sh "docker push \$DOCKER_REGISTRY/${serviceName}:\$TAG"
+                sh "docker push \$DOCKER_REGISTRY/${logicName}:\$TAG"
               }
             }
-            sh "mkdir -p ../gitops/profiles/\$PROFILE/${domainName}"
-            sh "/bin/cp ${serviceName}/${contextName}-manifest.yaml ../gitops/profiles/\$PROFILE/${domainName}/${contextName}-manifest.yaml"
-            dir("../gitops"){
-              sh "git config --global user.email 'operator@ouxxa.com'"
-              sh "git config --global user.name 'jenkins'"
-              sh "git add ."
-              sh "git diff-index --quiet HEAD || git commit -m \"jenkins ci - version: \$TAG, profile: \$PROFILE\""
-              sh 'if [ -z "\$PROXY_HOST" ];then export https_proxy=${proxyServerUrl} && git push; else git push; fi'
+          }
+        }
+        stage("${contextName} - Functional Verification") {
+          when {
+            expression { params.functional == true }
+          }
+          steps {
+            println 'Not Ready...'
+          }
+        }
+        stage("${contextName} - Security Verification") {
+          when {
+            expression { params.security == true }
+          }
+          steps {
+            println 'Not Ready...'
+          }
+        }
+        stage("${contextName} - Stress Verification") {
+          when {
+            expression { params.stress == true }
+          }
+          steps {
+            println 'Not Ready...'
+          }
+        }
+        stage("${contextName} - Robustness Verification") {
+          when {
+            expression { params.robustness == true }
+          }
+          steps {
+            println 'Not Ready...'
+          }
+        }
+        stage("${contextName} - Deployment") {
+          when {
+            expression { params.deploy == true }
+          }
+          steps {
+            container('micrc') {
+              sh 'git config --global --add safe.directory "*"'
+              withCredentials([usernamePassword(credentialsId: "\$REGISTRY_CREDENTIAL", passwordVariable: 'REGISTRY_PASSWORD', usernameVariable: 'REGISTRY_USERNAME')]) {
+                sh "docker login -u \$REGISTRY_USERNAME -p \$REGISTRY_PASSWORD \$DOCKER_REGISTRY"
+              }
+              dir("${serviceName}") {
+                sh './gradlew -PBUILD_ENV="production" clean'
+                sh './gradlew -PBUILD_ENV="production" -Pactive_profile=\$PROFILE processResources'
+                sh "/bin/cp ~/.docker/config.json ./build/micrc/manifests/k8s/kustomize/docker-config.json"
+                sh "export TAG=\$TAG && skaffold render -p \$PROFILE --digest-source=tag --default-repo=\$DOCKER_REGISTRY > ${contextName}-manifest.yaml"
+              }
+              lock("micrc-gitops") {
+                dir("../"){
+                  sh "chmod 777 -R ."
+                  withCredentials([usernamePassword(credentialsId: "\$GIT_CREDENTIAL", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                    sh "export https_proxy= && git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@\$GITOPS_REPO gitops"
+                  }
+                }
+                sh "mkdir -p ../gitops/profiles/\$PROFILE/${contextName}"
+                sh "/bin/cp ${serviceName}/${contextName}-manifest.yaml ../gitops/profiles/\$PROFILE/${domainName}/${contextName}-manifest.yaml"
+                dir("../gitops"){
+                  sh "git config --global user.email 'operator@ouxxa.com'"
+                  sh "git config --global user.name 'jenkins'"
+                  sh "git add ."
+                  sh "git diff-index --quiet HEAD || git commit -m \"jenkins ci - version: \$TAG, profile: \$PROFILE\""
+                  sh 'export https_proxy= && git push'
+                }
+              }
             }
           }
         }

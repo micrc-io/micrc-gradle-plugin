@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class IntroJsonParser {
     // prod env
-    private static final List<String> prod = List.of("alpha","beta","ga");
+    private static final List<String> prod = List.of("alpha","beta","release");
     // no kustomize template in resources
     private static final List<String> noTemplate = List.of(SystemEnv.DEFAULT_PROFILE,"ver","acc");
     // test env

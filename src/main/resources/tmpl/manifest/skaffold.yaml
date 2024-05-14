@@ -93,11 +93,11 @@ profiles:
       - op: add
         path: /build/artifacts/0/jib/args
         value:
-          - -Pactive_profile=ga
+          - -Pactive_profile=release
     manifests:
       kustomize:
         paths:
-          - build/micrc/manifests/k8s/kustomize/ga
+          - build/micrc/manifests/k8s/kustomize/release
         buildArgs:
           - --enable-helm
           - --load-restrictor=LoadRestrictionsNone

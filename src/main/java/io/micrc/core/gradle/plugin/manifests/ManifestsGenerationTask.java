@@ -200,7 +200,7 @@ public class ManifestsGenerationTask {
                 Map<String, Object> profile = (Map<String, Object>) profiles.get(profileKey);
                 if (!profile.keySet().isEmpty()) {
                     Map<String,String> instance = (Map<String,String>)profile.get("instance");
-                    instance.keySet().forEach(prop -> {
+                    Optional.of(instance).orElseThrow().keySet().forEach(prop -> {
                         String profileData = profilesData.get(profilePropertiesKey);
                         profileData += "\n    ";
                         profileData += provider + "_" + middleware + "_" + prop + ": " + instance.get(prop);

@@ -25,6 +25,6 @@ patches:
   - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/args
-        value: ["ga"]
+        value: ["release"]
     target:
       kind: Deployment
