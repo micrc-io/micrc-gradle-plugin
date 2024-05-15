@@ -140,7 +140,7 @@ pipeline {
               }
               dir("${serviceName}") {
                 sh './gradlew -PBUILD_ENV="production" clean'
-                sh './gradlew -PBUILD_ENV="production" -Pactive_profile=\$PROFILE processResources'
+                sh "./gradlew -PBUILD_ENV=\"production\" -Pactive_profile=\$PROFILE processResources"
                 sh "/bin/cp ~/.docker/config.json ./build/micrc/manifests/k8s/kustomize/docker-config.json"
                 sh "export TAG=\$TAG && skaffold render -p \$PROFILE --digest-source=tag --default-repo=\$DOCKER_REGISTRY > ${contextName}-manifest.yaml"
               }
