@@ -88,7 +88,7 @@ profiles:
         buildArgs:
           - --enable-helm
           - --load-restrictor=LoadRestrictionsNone
-  - name: ga
+  - name: release
     patches:
       - op: add
         path: /build/artifacts/0/jib/args
