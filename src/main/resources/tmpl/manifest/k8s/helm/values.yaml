@@ -64,7 +64,7 @@ resources: {}
   #   memory: 128Mi
 
 autoscaling:
-  enabled: false
+  enabled: true
   minReplicas: 2
   # 弹性池
   maxReplicas: 10
