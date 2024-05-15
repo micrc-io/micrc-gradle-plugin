@@ -14,6 +14,14 @@ resources:
   - ../base
   - ./sealed-secret.yaml
 
+patchesStrategicMerge:
+  - |-
+    apiVersion: autoscaling/v2beta1
+    kind: HorizontalPodAutoscaler
+    metadata:
+      name: ${name}
+    \$patch: delete
+
 patches:
   - patch: |-
       - op: add
