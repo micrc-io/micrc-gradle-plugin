@@ -151,7 +151,7 @@ pipeline {
                     sh 'export https_proxy= && git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@\$GITOPS_REPO gitops'
                   }
                 }
-                sh "mkdir -p ../gitops/profiles/\$PROFILE/${contextName}"
+                sh "mkdir -p ../gitops/profiles/\$PROFILE/${domainName}"
                 sh "/bin/cp ${serviceName}/${contextName}-manifest.yaml ../gitops/profiles/\$PROFILE/${domainName}/${contextName}-manifest.yaml"
                 dir("../gitops"){
                   sh "git config --global user.email 'operator@ouxxa.com'"
