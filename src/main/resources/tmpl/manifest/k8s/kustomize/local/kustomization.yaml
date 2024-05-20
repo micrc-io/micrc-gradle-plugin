@@ -29,14 +29,14 @@ secretGenerator:
       - public_cache_password=root
   - name: ${name}-kafka-broker
     literals:
-      - public_broker_host=kafka
-      - public_broker_port=9092
+      - public_broker_servers=kafka:9092
       - public_broker_password=root
       - public_broker_topics=
   - name: ${name}-redis-memdb
     literals:
       - public_memdb_host=redis-master
       - public_memdb_port=6379
+      - public_memdb_username=root
       - public_memdb_password=root
 
 helmCharts:
