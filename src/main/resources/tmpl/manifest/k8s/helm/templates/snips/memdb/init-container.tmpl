@@ -16,7 +16,7 @@
                 MEMDB_USERNAME_KEY="\$provider"_"\$MEMDB_USERNAME_KEY_SUFFIX"
                 MEMDB_USERNAME=\${!MEMDB_USERNAME_KEY}
                 if [ \$MEMDB_HOST ] && [ \$MEMDB_PORT ] && [ \$MEMDB_PASSWORD ] && [ \$MEMDB_USERNAME ]; then
-                  until redis-cli -a 'echo -n \$MEMDB_USERNAME:\$MEMDB_PASSWORD' -h \$MEMDB_HOST -p \$MEMDB_PORT --no-auth-warning PING; do echo waiting for memdb; sleep 2; done;
+                  until redis-cli -a `echo -n \$MEMDB_USERNAME:\$MEMDB_PASSWORD` -h \$MEMDB_HOST -p \$MEMDB_PORT --no-auth-warning PING; do echo waiting for memdb; sleep 2; done;
                 fi
               done;
           envFrom:
