@@ -13,9 +13,10 @@
                 CACHE_HOST=\${!CACHE_HOST_KEY}
                 CACHE_PORT_KEY="\$provider"_"\$CACHE_PORT_KEY_SUFFIX"
                 CACHE_PORT=\${!CACHE_PORT_KEY}
-
-                if [ \$CACHE_HOST ] && [ \$CACHE_PORT ] && [ \$CACHE_PASSWORD ]; then
-                  until redis-cli -a \$CACHE_PASSWORD -h \$CACHE_HOST -p \$CACHE_PORT --no-auth-warning ping; do echo waiting for cache; sleep 2; done;
+                CACHE_USERNAME_KEY="\$provider"_"\$CACHE_USERNAME_KEY_SUFFIX"
+                CACHE_USERNAME=\${!CACHE_USERNAME_KEY}
+                if [ \$CACHE_HOST ] && [ \$CACHE_PORT ] && [ \$CACHE_PASSWORD ] && [ \$CACHE_USERNAME ]; then
+                  until redis-cli -a 'echo -n \$CACHE_USERNAME:\$CACHE_PASSWORD' -h \$CACHE_HOST -p \$CACHE_PORT --no-auth-warning PING; do echo waiting for cache; sleep 2; done;
                 fi
               done;
           envFrom:
@@ -30,3 +31,5 @@
               value: {{ .Values.cache.cacheHostKeySuffix }}
             - name: CACHE_PORT_KEY_SUFFIX
               value: {{ .Values.cache.cachePortKeySuffix }}
+            - name: CACHE_USERNAME_KEY_SUFFIX
+              value: {{ .Values.cache.cacheUsernameKeySuffix }}
