@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -125,12 +126,12 @@ public class ProtocolIncomingGenerationTask {
             if (activeProfile.equals("default") && !"public".equals(provider)) {
                 return;
             }
-            LazyMap groups = jsonPathContext.getMap("server.middlewares.broker.profiles.{provider}.{env}.applications.groups", provider,env);
 
+            Map<String,List<Map<String,Object>>> groups = transferGroupsAndApplications(jsonPathContext,provider,env);
+            //LazyMap groups = jsonPathContext.getMap("server.middlewares.broker.profiles.{provider}.{env}.applications.groups", provider,env);
             groups.forEach((key, value)-> {
-                List<Map<String,Object>> valueList = (List<Map<String,Object>>) value;
                 int i = 0;
-                for (Map<String,Object> valueMap : valueList) {
+                for (Map<String,Object> valueMap : value) {
                     String factory = "kafkaListenerContainerFactory";
                     if (!"public".equalsIgnoreCase(provider)) {
                         factory = factory + "-"  + provider;
@@ -167,6 +168,98 @@ public class ProtocolIncomingGenerationTask {
             });
         });
 
+    }
+
+    private Map<String,List<Map<String,Object>>> transferGroupsAndApplications(JsonPathContext jsonPathContext, String provider, String env) {
+        LazyMap applications = jsonPathContext.getMap("server.middlewares.broker.profiles.{provider}.{env}.applications", provider,env);
+
+        Function<String, String> aggrFn = groupPath -> groupPath.split("_")[1];
+
+        Function<String,Map<String,String>> logicFn = logicPath -> {
+            String[] logic = logicPath.split("/");
+            return Map.of(
+                    "event", logic[0],
+                    "groupId", logic[1],
+                    "topic",logic[2],
+                    "aggr",aggrFn.apply(logic[1])
+            );
+        };
+
+        Function<String,List<Map<String,String>>> findLogicFn = path -> {
+            String servicePath = path.split("\\|")[1];
+            return Arrays.stream(servicePath.split(",")).map(logicFn).collect(Collectors.toList());
+        };
+
+        Map<String,List<Map<String,Object>>> newGroups = new HashMap<>();
+
+        applications.keySet().forEach(f -> {
+            String service = f.split(":")[1];
+            List<Map<String,String>> logicList = findLogicFn.apply((String)applications.get(f));
+            String aggr = logicList.get(0).get("aggr");
+
+            Function<String, Map<String,List<Map<String,Object>>>> initAggrContext = (t) -> {
+                Map<String,Map<String,Object>> groupMap = new HashMap<>();
+                logicList.forEach(logic -> {
+                    String groupId = logic.get("groupId");
+                    Map<String,String> serviceMap = Map.of(
+                            "topic", logic.get("topic"),
+                            "logic", service,
+                            "event",logic.get("event")
+                    );
+                    if (groupMap.containsKey(groupId)) {
+                        Map<String,Object> targetAggr = groupMap.get(groupId);
+                        List<String> topics = (List<String>)targetAggr.get("topics");
+                        if (!topics.contains(logic.get("topic"))) {
+                            topics.add(logic.get("topic"));
+                        }
+                        List<Map<String,String>> services = (List<Map<String,String>>)targetAggr.get("services");
+                        services.add(serviceMap);
+                    } else {
+                        List<String> topics = new ArrayList<>();
+                        topics.add(logic.get("topic"));
+                        List<Map<String,String>> services = new ArrayList<>();
+                        services.add(serviceMap);
+                        Map<String,Object> aggrMap = new HashMap<>();
+                        aggrMap.put("topics",topics);
+                        aggrMap.put("groupId", groupId);
+                        aggrMap.put("services",services);
+                        groupMap.put(logic.get("groupId"), aggrMap);
+                    }
+                });
+                return Map.of(
+                        aggr, new ArrayList<Map<String, Object>>(groupMap.values())
+                );
+            };
+
+            Map<String,List<Map<String,Object>>> initValues = initAggrContext.apply(null);
+            if (newGroups.containsKey(aggr)) {
+                List<Map<String,Object>> aggrs = newGroups.get(aggr);
+                List<Map<String,Object>> initValuesList = initValues.get(aggr);
+                initValuesList.forEach(initContext -> {
+                    String groupId = (String)initContext.get("groupId");
+                    Optional<Map<String,Object>> optionalAgrr = aggrs.stream().filter(aggrMap -> aggrMap.get("groupId").equals(groupId)).findFirst();
+                    if (optionalAgrr.isPresent()) {
+                        Map<String,Object> target = optionalAgrr.get();
+                        List<String> initTopics = (List<String>)initContext.get("topics");
+                        List<Map<String,String>> initServices = (List<Map<String,String>>)initContext.get("services");
+                        List<String> targetTopics = (List<String>)target.get("topics");
+                        List<Map<String,String>> targetServices = (List<Map<String,String>>)target.get("services");
+                        initTopics.forEach(t -> {
+                            if (!targetTopics.contains(t)) {
+                                targetTopics.add(t);
+                            }
+                        });
+                        targetServices.addAll(initServices);
+                    } else {
+                        aggrs.add(initContext);
+                    }
+                });
+            } else {
+                newGroups.putAll(initValues);
+            }
+        });
+
+        return newGroups;
     }
 
     private String spliceMappingPath(String fileName, String aggregationCode) {
