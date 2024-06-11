@@ -20,7 +20,6 @@ public interface ${logic}Runner extends ApplicationRunner {
     public static class ${logic}RunnerImpl implements ${logic}Runner {
 
         @Override
-        @Transactional
         @RunnerExecution
         @SchedulerLock(name = "${logic}Runner")
         public void run(ApplicationArguments args) throws Exception {
