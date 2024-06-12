@@ -68,7 +68,6 @@ profiles:
         path: /build/artifacts/0/jib/args
         value:
           - -Pactive_profile=alpha
-          - -PBUILD_ENV="production"
     manifests:
       kustomize:
         paths:
@@ -82,7 +81,6 @@ profiles:
         path: /build/artifacts/0/jib/args
         value:
           - -Pactive_profile=beta
-          - -PBUILD_ENV="production"
     manifests:
       kustomize:
         paths:
@@ -96,7 +94,6 @@ profiles:
         path: /build/artifacts/0/jib/args
         value:
           - -Pactive_profile=release
-          - -PBUILD_ENV="production"
     manifests:
       kustomize:
         paths:
