@@ -11,7 +11,7 @@ pipeline {
     string(name: 'commit', defaultValue: '', description: 'git commit num')
     choice(
       name: 'profile',
-      choices: ['no-deploy', 'dev', 'ver', 'acc'],
+      choices: ['dev', 'ver', 'acc'],
       description: 'deploy profile'
     )
     booleanParam(
@@ -43,7 +43,7 @@ pipeline {
             sh 'mvn clean package -q'
           }
           dir("${serviceName}") {
-            sh "export TAG=\$TAG && export https_proxy=${proxyServerUrl} && skaffold build -p \$PROFILE --default-repo=\$DOCKER_REGISTRY"
+            sh "export TAG=\$TAG && export ORG_GRADLE_PROJECT_BUILD_ENV=integration && export JAVA_TOOL_OPTIONS='-Dhttps.proxyHost=${proxyServer} -Dhttps.proxyPort=${proxyPort} -Dhttp.nonProxyHosts=${noProxyRepo}' && skaffold build -p \$PROFILE --default-repo=\$DOCKER_REGISTRY"
           }
           withCredentials([usernamePassword(credentialsId: "\$REGISTRY_CREDENTIAL", passwordVariable: 'REGISTRY_PASSWORD', usernameVariable: 'REGISTRY_USERNAME')]) {
             sh "docker login -u \$REGISTRY_USERNAME -p \$REGISTRY_PASSWORD \$DOCKER_REGISTRY"
@@ -55,7 +55,7 @@ pipeline {
     }
     stage('${contextName} - deployment') {
       when {
-        expression { params.profile != 'no-deploy' }
+        expression { params.deploy == true }
       }
       steps {
         container('micrc') {

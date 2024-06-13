@@ -42,7 +42,7 @@ public interface ${logic}Service extends ApplicationBusinessesService<${logic}Co
 
         <#if permission?? && permission != ''>@RequiresPermissions("${permission}")
         </#if>@BusinessesExecution
-        @Transactional
+        @Transactional(rollbackFor = Exception.class)
         @Override
         public void execute(${logic}Command command) {
             <#if custom?? && custom != ''>${custom}<#else></#if>

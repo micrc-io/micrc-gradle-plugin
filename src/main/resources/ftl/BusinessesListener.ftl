@@ -6,6 +6,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import io.micrc.core.annotations.message.Adapter;
 import java.io.IOException;
 
@@ -25,6 +26,7 @@ public interface ${name} {
             topics = {<#list topics as topic>"${topic}"<#if topic_has_next>,</#if></#list>}, groupId = "${groupId}", autoStartup = "true", concurrency = "3", containerFactory = "${factory}"
         )
         @Override
+        @Transactional(rollbackFor = Exception.class)
         @MessageExecution
         public void adapt(ConsumerRecord<?, ?> consumerRecord, Acknowledgment acknowledgment) throws IOException {
         }
