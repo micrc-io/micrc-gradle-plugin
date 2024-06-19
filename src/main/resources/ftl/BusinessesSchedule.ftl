@@ -15,7 +15,7 @@ public class ${logic}Schedule {
     private ${logic}Service service;
 
     @Async
-    @Scheduled(cron = "${cron}")
+    @Scheduled(<#if cron?? && cron != ''>cron = "${cron}"</#if><#if fixedDelay?? && fixedDelay != ''>initialDelay = 1000, fixedDelay = ${fixedDelay}</#if>)
     @SchedulerLock(name = "${logic}")
     public void execute() {
         service.execute(new ${logic}Command());

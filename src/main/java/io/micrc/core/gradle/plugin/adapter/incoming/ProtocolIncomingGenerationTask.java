@@ -99,8 +99,11 @@ public class ProtocolIncomingGenerationTask {
                     FreemarkerUtil.generator("BusinessesAdapter", map, fileName);
                 }  else if ("SCHEDULE".equals(portType)) {
                     // cron
-                    String cron = metadataNode.at("/schedule/cron").textValue();
+                    JsonNode scheduleNode = metadataNode.at("/schedule");
+                    String cron = scheduleNode.at("/cron").textValue();
                     map.put("cron", cron);
+                    String fixedDelay = scheduleNode.at("/fixedDelay").textValue();
+                    map.put("fixedDelay", fixedDelay);
                     String fileName = project.getProjectDir().getAbsolutePath() + "/src/main/java/"
                             + basePackage.replace(".", "/") + "/infrastructure/schedule/"
                             + aggregationPackage + "/" + logic + "Schedule.java";
